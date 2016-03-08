@@ -2,18 +2,10 @@
 
 [![Scala.js](https://www.scala-js.org/assets/badges/scalajs-0.6.6.svg)](https://www.scala-js.org/)
 
-## Installing
-
-First clone this repository locally and then publish locally
-```
-> ++2.10.6
-> seleniumJSEnv/publishLocal
-```
-
 ## Usage
 Simply add the following line to your `project/plugins.sbt`:
 ```
-libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "0.0.1-SNAPSHOT"
+libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "0.1.0"
 ```
 and the following line to your sbt settings:
 ```

@@ -25,7 +25,36 @@ lazy val seleniumJSEnv: Project = project.
         "org.scala-js" %% "scalajs-js-envs" % "0.6.7",
         "org.seleniumhq.selenium" % "selenium-java" % "2.49.1",
         "org.seleniumhq.selenium" % "selenium-chrome-driver" % "2.49.1"
-    )
+    ),
+
+    publishMavenStyle := true,
+    publishTo := {
+      val nexus = "https://oss.sonatype.org/"
+      if (isSnapshot.value)
+        Some("snapshots" at nexus + "content/repositories/snapshots")
+      else
+        Some("releases" at nexus + "service/local/staging/deploy/maven2")
+    },
+    pomExtra := (
+      <developers>
+        <developer>
+          <id>nicolasstucki</id>
+          <name>Nicolas Stucki</name>
+          <url>https://github.com/nicolasstucki/</url>
+        </developer>
+        <developer>
+          <id>sjrd</id>
+          <name>Sébastien Doeraene</name>
+          <url>https://github.com/sjrd/</url>
+        </developer>
+        <developer>
+          <id>gzm0</id>
+          <name>Tobias Schlatter</name>
+          <url>https://github.com/gzm0/</url>
+        </developer>
+      </developers>
+    ),
+    pomIncludeRepository := { _ => false }
   )
 
 lazy val seleniumJSEnvTest: Project = project.

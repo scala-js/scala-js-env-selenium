@@ -4,7 +4,7 @@ import org.scalajs.jsenv.selenium.SeleniumJSEnv
 import org.scalajs.jsenv.selenium.Firefox
 
 val commonSettings: Seq[Setting[_]] = Seq(
-  version := "0.1.1-SNAPSHOT",
+  version := "0.1.1",
   organization := "org.scala-js",
   scalaVersion := "2.11.7",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),

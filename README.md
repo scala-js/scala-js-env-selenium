@@ -4,11 +4,11 @@
 
 ## Usage
 Simply add the following line to your `project/plugins.sbt`:
-```
+```scala
 libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "0.1.0"
 ```
 and the following line to your sbt settings:
-```
+```scala
 jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(BROWSER)
 ```
 where the `BROWSER` can be either `org.scalajs.jsenv.selenium.Firefox` or

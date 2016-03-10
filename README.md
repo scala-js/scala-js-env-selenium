@@ -34,6 +34,25 @@ Selenium requires an additional driver to connect to Google Chrome.
 This driver can be found at https://sites.google.com/a/chromium.org/chromedriver/.
 You will also need to make sure the driver location is in the systems `PATH` variable.
 
+### Headless Usage
+It is often desirable to run Selenium headlessly.
+This could be to run tests on a server without graphics, or to just prevent browser
+windows popping up when running locally.
+
+##### xvfb
+A common approach on Linux and Mac OSX, is to use `xvfb`, "X Virtual FrameBuffer".
+It starts an X server headlessly, without the need for a graphics driver.
+
+Once you have `xvfb` installed, usage here with SBT is as simple as:
+```sh
+Xvfb :1 &
+DISPLAY=:1 sbt
+```
+
+The `:1` indicates the X display-number, which is a means to uniquely identify an
+X server on a host. The `1` is completely arbitrary—you can choose any number so
+long as there isn't another X server running that's already associated with it.
+
 ## License
 
 `scalajs-env-selenium` is distributed under the

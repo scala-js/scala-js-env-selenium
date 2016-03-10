@@ -18,9 +18,14 @@ val commonSettings: Seq[Setting[_]] = Seq(
       Some("scm:git:git@github.com:scala-js/scala-js-env-selenium.git")))
 )
 
+// We'll need the name scalajs-env-selenium for the `seleniumJSEnv` project
+name := "root"
+
 lazy val seleniumJSEnv: Project = project.
   settings(commonSettings).
   settings(
+    name := "scalajs-env-selenium",
+
     libraryDependencies ++= Seq(
         "org.scala-js" %% "scalajs-js-envs" % "0.6.7",
         "org.seleniumhq.selenium" % "selenium-java" % "2.49.1",

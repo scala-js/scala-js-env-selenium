@@ -11,6 +11,12 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 
 object Firefox extends SeleniumBrowser {
+
+  private final val popHijackedConsoleScript = {
+    "var callback = arguments[arguments.length - 1];" +
+    "callback(scalajsPopHijackedConsoleLog());"
+  }
+
   def name: String = "Firefox"
 
   def newDriver: BrowserDriver = new FirefoxDriver
@@ -64,7 +70,7 @@ object Firefox extends SeleniumBrowser {
     protected def newConsoleLogsIterator(): Iterator[String] = {
       val buf = new ArrayBuffer[String]
       @tailrec def addRemainingLogsToBuffer(): Unit = {
-        getWebDriver.executeScript("return scalajsPopHijackedConsoleLog();") match {
+        getWebDriver.executeAsyncScript(popHijackedConsoleScript) match {
           case logs: ju.List[_] =>
             logs.foreach(log => buf.append(log.toString))
             if (logs.size() != 0)

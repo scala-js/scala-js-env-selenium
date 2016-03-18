@@ -1,5 +1,7 @@
 package org.scalajs.jsenv.selenium
 
+import java.util.concurrent.TimeUnit
+
 import org.openqa.selenium.remote._
 
 import org.scalajs.jsenv.JSConsole
@@ -18,6 +20,7 @@ abstract class BrowserDriver {
   final def start(): Unit = synchronized {
     assert(!isOpened, "start() may only start one instance at a time.")
     webDriver = newDriver()
+    webDriver.manage().timeouts().setScriptTimeout(-1, TimeUnit.SECONDS)
   }
 
   /** Closes the instance of the browser. */

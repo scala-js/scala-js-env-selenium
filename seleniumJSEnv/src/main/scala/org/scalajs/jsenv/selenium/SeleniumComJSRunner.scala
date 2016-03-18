@@ -19,18 +19,27 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
   protected def envName: String =
     "SeleniumComJSRunner on " + browserProvider.name
 
+  private final val sendScript = {
+    "var callback = arguments[arguments.length - 1];" +
+    "this.scalajsSeleniumComJSRunnerChannel.recvMessage(arguments[0]);" +
+    "callback();"
+  }
+
+  private final val receiveScript = {
+    "var callback = arguments[arguments.length - 1];" +
+    "callback(this.scalajsSeleniumComJSRunnerChannel.popOutMsg());"
+  }
+
   def send(msg: String): Unit = {
     awaitForBrowser()
-    browser.getWebDriver.executeScript(
-        "this.scalajsSeleniumComJSRunnerChannel.recvMessage(arguments[0])", msg)
+    browser.getWebDriver.executeAsyncScript(sendScript, msg)
     browser.processConsoleLogs(console)
   }
 
   def receive(timeout: Duration): String = {
     awaitForBrowser(timeout)
     @tailrec def loop(): String = {
-      val script = "return this.scalajsSeleniumComJSRunnerChannel.popOutMsg();"
-      browser.getWebDriver.executeScript(script) match {
+      browser.getWebDriver.executeAsyncScript(receiveScript) match {
         case null =>
           loop()
 

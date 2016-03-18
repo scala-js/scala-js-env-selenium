@@ -6,7 +6,9 @@ import org.openqa.selenium.remote._
 
 import java.{util => ju}
 
+import scala.annotation.tailrec
 import scala.collection.JavaConversions._
+import scala.collection.mutable.ArrayBuffer
 
 object Firefox extends SeleniumBrowser {
   def name: String = "Firefox"
@@ -22,6 +24,7 @@ object Firefox extends SeleniumBrowser {
       """
         |(function () {
         |  var console_log_hijack = [];
+        |  var currentLogIndex = 0;
         |  var oldLog = console.log;
         |  console.log = function (msg) {
         |    console_log_hijack.push(msg);
@@ -33,10 +36,21 @@ object Firefox extends SeleniumBrowser {
         |    oldErr.apply(console, arguments);
         |  };
         |  this.scalajsPopHijackedConsoleLog = function () {
-        |    var log = console_log_hijack;
-        |    if (log.length != 0)
-        |      console_log_hijack = [];
-        |    return log;
+        |    if (console_log_hijack.length == 0) {
+        |      return console_log_hijack;
+        |    } else {
+        |      var log = [];
+        |      while (currentLogIndex < console_log_hijack.length &&
+        |          log.length < 1024) {
+        |        log.push(console_log_hijack[currentLogIndex]);
+        |        currentLogIndex++;
+        |      }
+        |      if (console_log_hijack.length == currentLogIndex) {
+        |        console_log_hijack = [];
+        |        currentLogIndex = 0;
+        |      }
+        |      return log;
+        |    }
         |  };
         |})();
       """.stripMargin
@@ -48,10 +62,19 @@ object Firefox extends SeleniumBrowser {
       new org.openqa.selenium.firefox.FirefoxDriver()
 
     protected def newConsoleLogsIterator(): Iterator[String] = {
-      getWebDriver.executeScript("return scalajsPopHijackedConsoleLog();") match {
-        case log: ju.ArrayList[_] => log.iterator().map(_.toString)
-        case msg                    => BrowserDriver.illFormattedScriptResult(msg)
+      val buf = new ArrayBuffer[String]
+      @tailrec def addRemainingLogsToBuffer(): Unit = {
+        getWebDriver.executeScript("return scalajsPopHijackedConsoleLog();") match {
+          case logs: ju.List[_] =>
+            logs.foreach(log => buf.append(log.toString))
+            if (logs.size() != 0)
+              addRemainingLogsToBuffer()
+
+          case msg => BrowserDriver.illFormattedScriptResult(msg)
+        }
       }
+      addRemainingLogsToBuffer()
+      buf.toArray.toIterator
     }
   }
 }

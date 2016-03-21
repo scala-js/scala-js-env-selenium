@@ -28,8 +28,8 @@ lazy val seleniumJSEnv: Project = project.
 
     libraryDependencies ++= Seq(
         "org.scala-js" %% "scalajs-js-envs" % "0.6.7",
-        "org.seleniumhq.selenium" % "selenium-java" % "2.49.1",
-        "org.seleniumhq.selenium" % "selenium-chrome-driver" % "2.49.1"
+        "org.seleniumhq.selenium" % "selenium-java" % "2.53.0",
+        "org.seleniumhq.selenium" % "selenium-chrome-driver" % "2.53.0"
     ),
 
     publishMavenStyle := true,

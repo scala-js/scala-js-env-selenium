@@ -12,8 +12,8 @@ import scala.concurrent.duration.Duration
 import scala.util.Try
 
 class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
-    libs: Seq[ResolvedJSDependency], code: VirtualJSFile, keepAlive: Boolean)
-    extends SeleniumAsyncJSRunner(browserProvider, libs, code, keepAlive)
+    libs: Seq[ResolvedJSDependency], code: VirtualJSFile, keepAlive: Boolean, materializer: FileMaterializer)
+    extends SeleniumAsyncJSRunner(browserProvider, libs, code, keepAlive, materializer)
     with ComJSRunner {
 
   protected def envName: String =

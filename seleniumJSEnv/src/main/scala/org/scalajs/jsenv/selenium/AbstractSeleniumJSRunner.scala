@@ -3,10 +3,10 @@ package org.scalajs.jsenv.selenium
 import org.scalajs.core.tools.io.{MemVirtualJSFile, VirtualJSFile}
 import org.scalajs.core.tools.jsdep.ResolvedJSDependency
 import org.scalajs.core.tools.logging.Logger
-import org.scalajs.jsenv.{VirtualFileMaterializer, JSConsole}
+import org.scalajs.jsenv.JSConsole
 
 abstract class AbstractSeleniumJSRunner(browserProvider: SeleniumBrowser,
-    libs: Seq[ResolvedJSDependency], code: VirtualJSFile) {
+    libs: Seq[ResolvedJSDependency], code: VirtualJSFile, materializer: FileMaterializer) {
 
   protected val browser = browserProvider.newDriver
 
@@ -22,30 +22,23 @@ abstract class AbstractSeleniumJSRunner(browserProvider: SeleniumBrowser,
     _console = console
   }
 
-  protected[this] val libCache = new VirtualFileMaterializer(true)
-
   protected def initFiles(): Seq[VirtualJSFile] =
     browserProvider.initFiles() ++ runtimeEnv()
 
   protected def runAllScripts(): Unit = {
     val inits = initFiles()
-    val cacheDir = libCache.cacheDir.getAbsolutePath
-    def absolutePath(fileName: String): String =
-      "file://" + cacheDir + "/" + fileName
 
     val jsFiles = {
-      inits.map(file => absolutePath(file.path)) ++
-      libs.map(dep => absolutePath(dep.info.relPath.split('/').last)) :+
+      inits.map(materializer.materialize(_).toString) ++
+      libs.map(dep => materializer.materialize(dep.lib).toString) :+
       code.path
     }
     val page = htmlPage(jsFiles)
 
-    inits.foreach(libCache.materialize)
-    libs.foreach(dep => libCache.materialize(dep.lib))
-    libCache.materialize(code)
-    libCache.materialize(page)
+    materializer.materialize(code)
+    val pageURL = materializer.materialize(page)
 
-    browser.getWebDriver.get("file://" + cacheDir + "/" + page.path)
+    browser.getWebDriver.get(pageURL.toString)
     browser.processConsoleLogs(console)
   }
 

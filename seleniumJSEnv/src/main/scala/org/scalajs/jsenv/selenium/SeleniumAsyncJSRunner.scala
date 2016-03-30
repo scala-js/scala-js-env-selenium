@@ -10,8 +10,8 @@ import scala.concurrent.{Future, Promise}
 import scala.util.Try
 
 class SeleniumAsyncJSRunner(browserProvider: SeleniumBrowser,
-    libs: Seq[ResolvedJSDependency], code: VirtualJSFile, keepAlive: Boolean)
-    extends AbstractSeleniumJSRunner(browserProvider, libs, code)
+    libs: Seq[ResolvedJSDependency], code: VirtualJSFile, keepAlive: Boolean, materializer: FileMaterializer)
+    extends AbstractSeleniumJSRunner(browserProvider, libs, code, materializer)
     with AsyncJSRunner {
 
   private[this] var promise = Promise[Unit]()

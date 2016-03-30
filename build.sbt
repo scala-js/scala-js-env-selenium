@@ -2,6 +2,7 @@ import sbt.Keys._
 
 import org.scalajs.jsenv.selenium.SeleniumJSEnv
 import org.scalajs.jsenv.selenium.Firefox
+import org.scalajs.jsenv.selenium.CustomFileMaterializer
 
 val commonSettings: Seq[Setting[_]] = Seq(
   version := "0.1.2-SNAPSHOT",
@@ -16,6 +17,15 @@ val commonSettings: Seq[Setting[_]] = Seq(
       url("https://github.com/scala-js/scala-js-env-selenium"),
       "scm:git:git@github.com:scala-js/scala-js-env-selenium.git",
       Some("scm:git:git@github.com:scala-js/scala-js-env-selenium.git")))
+)
+
+val testSettings: Seq[Setting[_]] = commonSettings ++ Seq(
+  testOptions +=
+    Tests.Argument(TestFramework("com.novocode.junit.JUnitFramework"), "-v", "-a"),
+  jsDependencies ++= Seq(
+      RuntimeDOM % "test",
+      "org.webjars" % "jquery" % "1.10.2" / "jquery.js"
+  )
 )
 
 // We'll need the name scalajs-env-selenium for the `seleniumJSEnv` project
@@ -65,13 +75,16 @@ lazy val seleniumJSEnv: Project = project.
 lazy val seleniumJSEnvTest: Project = project.
   enablePlugins(ScalaJSPlugin).
   enablePlugins(ScalaJSJUnitPlugin).
-  settings(commonSettings).
+  settings(testSettings).
   settings(
-    testOptions +=
-      Tests.Argument(TestFramework("com.novocode.junit.JUnitFramework"), "-v", "-a"),
-    jsDependencies ++= Seq(
-        RuntimeDOM % "test",
-        "org.webjars" % "jquery" % "1.10.2" / "jquery.js"
-    ),
     jsEnv := new SeleniumJSEnv(Firefox)
+  )
+
+lazy val seleniumJSHttpEnvTest: Project = project.
+  enablePlugins(ScalaJSPlugin).
+  enablePlugins(ScalaJSJUnitPlugin).
+  settings(testSettings).
+  settings(
+    jsEnv := new SeleniumJSEnv(Firefox).
+      withMaterializer(new CustomFileMaterializer("tmp", "http://localhost:8080/tmp"))
   )

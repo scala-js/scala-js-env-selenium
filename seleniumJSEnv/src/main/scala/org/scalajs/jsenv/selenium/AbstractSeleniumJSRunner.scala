@@ -28,6 +28,13 @@ abstract class AbstractSeleniumJSRunner(browserProvider: SeleniumBrowser,
     _console = console
   }
 
+  protected def ignoreKeepAlive: Boolean = {
+    val name = code.name
+    name == "frameworkDetector.js" ||
+    name == "testFrameworkInfo.js" ||
+    name == "testMaster.js"
+  }
+
   @deprecated("Replaced by materializer.", "0.1.2")
   protected[this] def libCache = new VirtualFileMaterializer(true)
 

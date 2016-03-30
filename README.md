@@ -29,6 +29,11 @@ add the option `withKeepAlive` on the environment (`new SeleniumJSEnv(BROWSER).w
 It is recommend to use this with a `run` and not `test` because the latter tends
 to leave too many browser windows open.
 
+#### Debugging tests on a single window
+By default tests are executed in their own window for parallelism.
+When debugging tests with `withKeepAlive` it is possible to disable this option
+using the `sbt` setting `parallelExecution in Test := false`.
+
 ### Additional requirements for Google Chrome
 Selenium requires an additional driver to connect to Google Chrome.
 This driver can be found at https://sites.google.com/a/chromium.org/chromedriver/.

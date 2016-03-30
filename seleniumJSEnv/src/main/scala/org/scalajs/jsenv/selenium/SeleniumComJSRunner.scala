@@ -65,7 +65,7 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
 
   def close(): Unit = {
     browser.processConsoleLogs(console)
-    if (!keepAlive)
+    if (!keepAlive || ignoreKeepAlive)
       browser.close()
   }
 

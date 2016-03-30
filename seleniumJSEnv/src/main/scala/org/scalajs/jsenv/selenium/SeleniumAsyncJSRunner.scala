@@ -32,7 +32,7 @@ class SeleniumAsyncJSRunner(browserProvider: SeleniumBrowser,
   }
 
   override def stop(): Unit = synchronized {
-    if (!keepAlive) {
+    if (!keepAlive || ignoreKeepAlive) {
       future.onComplete { _ =>
         browser.processConsoleLogs(console)
         browser.close()

@@ -19,7 +19,7 @@ class SeleniumRunner(browserProvider: SeleniumBrowser,
     setupLoggerAndConsole(logger, console)
     browser.start()
     runAllScripts()
-    if (!keepAlive)
+    if (!keepAlive || ignoreKeepAlive)
       browser.close()
   }
 }

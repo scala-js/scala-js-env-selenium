@@ -9,6 +9,12 @@ class SeleniumRunner(browserProvider: SeleniumBrowser,
     libs: Seq[ResolvedJSDependency], code: VirtualJSFile, keepAlive: Boolean, materializer: FileMaterializer)
     extends AbstractSeleniumJSRunner(browserProvider, libs, code, materializer) with JSRunner {
 
+  @deprecated("Use the overload with an explicit FileMaterializer.", "0.1.2")
+  def this(browserProvider: SeleniumBrowser, libs: Seq[ResolvedJSDependency],
+      code: VirtualJSFile, keepAlive: Boolean) = {
+    this(browserProvider, libs, code, keepAlive, DefaultFileMaterializer)
+  }
+
   def run(logger: Logger, console: JSConsole): Unit = {
     setupLoggerAndConsole(logger, console)
     browser.start()

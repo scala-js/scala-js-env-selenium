@@ -3,10 +3,16 @@ package org.scalajs.jsenv.selenium
 import org.scalajs.core.tools.io.{MemVirtualJSFile, VirtualJSFile}
 import org.scalajs.core.tools.jsdep.ResolvedJSDependency
 import org.scalajs.core.tools.logging.Logger
-import org.scalajs.jsenv.JSConsole
+import org.scalajs.jsenv.{JSConsole, VirtualFileMaterializer}
 
 abstract class AbstractSeleniumJSRunner(browserProvider: SeleniumBrowser,
     libs: Seq[ResolvedJSDependency], code: VirtualJSFile, materializer: FileMaterializer) {
+
+  @deprecated("Use the overload with an explicit FileMaterializer.", "0.1.2")
+  def this(browserProvider: SeleniumBrowser, libs: Seq[ResolvedJSDependency],
+      code: VirtualJSFile) = {
+    this(browserProvider, libs, code, DefaultFileMaterializer)
+  }
 
   protected val browser = browserProvider.newDriver
 
@@ -21,6 +27,9 @@ abstract class AbstractSeleniumJSRunner(browserProvider: SeleniumBrowser,
     _logger = logger
     _console = console
   }
+
+  @deprecated("Replaced by materializer.", "0.1.2")
+  protected[this] def libCache = new VirtualFileMaterializer(true)
 
   protected def initFiles(): Seq[VirtualJSFile] =
     browserProvider.initFiles() ++ runtimeEnv()

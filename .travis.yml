@@ -6,6 +6,7 @@ before_script:
   - python -m SimpleHTTPServer 8080 &
 script:
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/scalastyle seleniumJSEnv/test:scalastyle seleniumJSEnvTest/scalastyle seleniumJSHttpEnvTest/test:scalastyle seleniumJSEnvTest/test:scalastyle
+  - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/mimaReportBinaryIssues
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnvTest/run seleniumJSEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test
   - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox).withKeepAlive())' seleniumJSEnvTest/run seleniumJSEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test
   - sbt ++$TRAVIS_SCALA_VERSION 'set scalaJSStage in Global := FullOptStage' seleniumJSHttpEnvTest/test

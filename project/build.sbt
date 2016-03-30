@@ -1,5 +1,7 @@
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.7")
 
+addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "0.1.8")
+
 addSbtPlugin("org.scalastyle" % "scalastyle-sbt-plugin" % "0.8.0")
 
 libraryDependencies += ("org.scala-js" %% "scalajs-js-envs" % "0.6.7")

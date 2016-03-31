@@ -1,8 +1,20 @@
 import sbt.Keys._
 
+import  org.scalajs.sbtplugin.ScalaJSCrossVersion
+
 import org.scalajs.jsenv.selenium.SeleniumJSEnv
 import org.scalajs.jsenv.selenium.Firefox
 import org.scalajs.jsenv.selenium.CustomFileMaterializer
+
+import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
+import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFilters}
+
+val previousVersion = "0.1.1"
+
+val scalaVersionsUsedForPublishing: Set[String] =
+  Set("2.10.6", "2.11.7", "2.12.0-M3")
+val newScalaBinaryVersionsInThisRelease: Set[String] =
+  Set()
 
 val commonSettings: Seq[Setting[_]] = Seq(
   version := "0.1.2-SNAPSHOT",
@@ -17,7 +29,33 @@ val commonSettings: Seq[Setting[_]] = Seq(
       url("https://github.com/scala-js/scala-js-env-selenium"),
       "scm:git:git@github.com:scala-js/scala-js-env-selenium.git",
       Some("scm:git:git@github.com:scala-js/scala-js-env-selenium.git")))
-)
+) ++ mimaDefaultSettings
+
+val previousArtifactSetting: Setting[_] = {
+  previousArtifact := {
+    val scalaV = scalaVersion.value
+    val scalaBinaryV = scalaBinaryVersion.value
+    if (!scalaVersionsUsedForPublishing.contains(scalaV)) {
+      // This artifact will not be published. Binary compatibility is irrelevant.
+      None
+    } else if (newScalaBinaryVersionsInThisRelease.contains(scalaBinaryV)) {
+      // New in this release, no binary compatibility to comply to
+      None
+    } else {
+      val thisProjectID = projectID.value
+      /* Filter out e:info.apiURL as it expects 0.6.7-SNAPSHOT, whereas the
+       * artifact we're looking for has 0.6.6 (for example).
+       */
+      val prevExtraAttributes =
+        thisProjectID.extraAttributes.filterKeys(_ != "e:info.apiURL")
+      val prevProjectID =
+        (thisProjectID.organization % thisProjectID.name % previousVersion)
+            .cross(thisProjectID.crossVersion)
+            .extra(prevExtraAttributes.toSeq: _*)
+      Some(CrossVersion(scalaV, scalaBinaryV)(prevProjectID).cross(CrossVersion.Disabled))
+    }
+  }
+}
 
 val testSettings: Seq[Setting[_]] = commonSettings ++ Seq(
   testOptions +=
@@ -41,6 +79,9 @@ lazy val seleniumJSEnv: Project = project.
         "org.seleniumhq.selenium" % "selenium-java" % "2.53.0",
         "org.seleniumhq.selenium" % "selenium-chrome-driver" % "2.53.0"
     ),
+
+    previousArtifactSetting,
+    binaryIssueFilters ++= BinaryIncompatibilities.SeleniumJSEnv,
 
     publishMavenStyle := true,
     publishTo := {

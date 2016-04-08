@@ -80,11 +80,17 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
          |  var sendMsgBufIn = []; // push to this one
          |  var sendMsgBufOut = []; // pop from this one
          |
+         |  // Buffer for incoming messages (used if onReceive not initialized)
+         |  var receiveBuf = [];
+         |
          |  var onReceive = null;
          |
          |  this.scalajsCom = {
          |    init: function(recvCB) {
          |      onReceive = recvCB;
+         |      for (var i in receiveBuf)
+         |        onReceive(receiveBuf[i]);
+         |      receiveBuf = null;
          |    },
          |    send: function(msg) {
          |      sendMsgBufIn.push(msg);
@@ -103,7 +109,10 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
          |      return sendMsgBufOut.pop();
          |    },
          |    recvMessage: function(msg) {
-         |      onReceive(msg);
+         |      if (onReceive != null)
+         |        onReceive(msg);
+         |      else
+         |        receiveBuf.push(msg);
          |    }
          |  };
          |}).call(this);

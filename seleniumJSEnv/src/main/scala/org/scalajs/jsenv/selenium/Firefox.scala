@@ -5,6 +5,9 @@ import org.scalajs.core.tools.io._
 import org.openqa.selenium.remote._
 
 import java.{util => ju}
+import java.io.File
+
+import org.apache.commons.io.FileUtils
 
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
@@ -81,6 +84,15 @@ object Firefox extends SeleniumBrowser {
       }
       addRemainingLogsToBuffer()
       buf.toArray.toIterator
+    }
+
+    override protected def afterClose(): Unit = {
+      val tempDir = new File(System.getProperty("java.io.tmpdir"))
+      // Delete Firefox temp profiles
+      for (file <- tempDir.listFiles()) {
+        if (file.getName.matches("anonymous\\d+webdriver-profile"))
+          FileUtils.deleteDirectory(file)
+      }
     }
   }
 }

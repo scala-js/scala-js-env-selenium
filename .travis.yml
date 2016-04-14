@@ -1,41 +1,35 @@
-sudo: true
+sudo: required
+dist: trusty
 language: scala
 before_install:
   # Initilize xvfb
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
-  # Instal google-chrome
-    #  - export CHROME_BIN=/usr/bin/google-chrome
-    #  - sudo apt-get update
-    #  - sudo apt-get install -y libappindicator1 fonts-liberation
-    #  - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-    #  - sudo dpkg -i google-chrome*.deb
   # Install Selenium chromedriver
-    #  - wget http://chromedriver.storage.googleapis.com/2.21/chromedriver_linux64.zip
-    #  - unzip chromedriver_linux64.zip -d selenium-bin
-    #  - export PATH=$PWD/selenium-bin:$PATH
+  - wget http://chromedriver.storage.googleapis.com/2.21/chromedriver_linux64.zip
+  - unzip chromedriver_linux64.zip -d selenium-bin
+  - export PATH=$PWD/selenium-bin:$PATH
 before_script:
   - python -m SimpleHTTPServer 8080 &
 script:
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/scalastyle seleniumJSEnv/test:scalastyle seleniumJSEnvTest/scalastyle seleniumJSHttpEnvTest/test:scalastyle seleniumJSEnvTest/test:scalastyle seleniumJSEnvKitTest/test:scalastyle
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/mimaReportBinaryIssues
-  # JSEnv test kit
   # Firefox tests
   - sbt ++$TRAVIS_SCALA_VERSION 'seleniumJSEnvKitTest/testOnly org.scalajs.jsenv.selenium.firefox.*'
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnvTest/run seleniumJSEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSHttpEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSHttpEnvTest/test
   # Chrome tests
-    #  - sbt ++$TRAVIS_SCALA_VERSION 'seleniumJSEnvKitTest/testOnly org.scalajs.jsenv.selenium.chrome.*'
-    #  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Chrome))' seleniumJSEnvTest/run seleniumJSEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test
-    #  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSHttpEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Chrome).withMaterializer(new org.scalajs.jsenv.selenium.CustomFileMaterializer("tmp", "http://localhost:8080/tmp")))' seleniumJSHttpEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSHttpEnvTest/test
+  - sbt ++$TRAVIS_SCALA_VERSION 'seleniumJSEnvKitTest/testOnly org.scalajs.jsenv.selenium.chrome.*'
+  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Chrome))' seleniumJSEnvTest/run seleniumJSEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test
+  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSHttpEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Chrome).withMaterializer(new org.scalajs.jsenv.selenium.CustomFileMaterializer("tmp", "http://localhost:8080/tmp")))' seleniumJSHttpEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSHttpEnvTest/test
   # Firefox tests `withKeepAlive()`
-  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox).withKeepAlive())' seleniumJSEnvTest/run
+  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox()).withKeepAlive())' seleniumJSEnvTest/run
   - killall -w firefox-bin
-  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox).withKeepAlive())' seleniumJSEnvTest/test
+  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox()).withKeepAlive())' seleniumJSEnvTest/test
   - killall -w firefox-bin
-  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox).withKeepAlive())' 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run
+  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox()).withKeepAlive())' 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run
   - killall -w firefox-bin
-  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox).withKeepAlive())' 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/test
+  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox()).withKeepAlive())' 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/test
   - killall -w firefox-bin
 scala:
   - 2.10.6
@@ -50,3 +44,8 @@ matrix:
       jdk: oraclejdk7
 addons:
   firefox: latest
+apt:
+  sources:
+    - google-chrome
+  packages:
+    - google-chrome-stable

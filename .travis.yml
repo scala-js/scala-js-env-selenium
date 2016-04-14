@@ -19,10 +19,21 @@ before_script:
 script:
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/scalastyle seleniumJSEnv/test:scalastyle seleniumJSEnvTest/scalastyle seleniumJSHttpEnvTest/test:scalastyle seleniumJSEnvTest/test:scalastyle
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/mimaReportBinaryIssues
-  - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnvTest/run seleniumJSEnvTest/test seleniumJSHttpEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test seleniumJSHttpEnvTest/test
-  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Chrome))' seleniumJSEnvTest/run seleniumJSEnvTest/test seleniumJSHttpEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test seleniumJSHttpEnvTest/test
-  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox).withKeepAlive())' seleniumJSEnvTest/run seleniumJSEnvTest/test seleniumJSHttpEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test seleniumJSHttpEnvTest/test
-  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Chrome).withKeepAlive())' seleniumJSEnvTest/run seleniumJSEnvTest/test seleniumJSHttpEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test seleniumJSHttpEnvTest/test
+  # Firefox tests
+  - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnvTest/run seleniumJSEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test
+  - sbt ++$TRAVIS_SCALA_VERSION seleniumJSHttpEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSHttpEnvTest/test
+  # Chrome tests
+  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Chrome))' seleniumJSEnvTest/run seleniumJSEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test
+  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSHttpEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Chrome).withMaterializer(new org.scalajs.jsenv.selenium.CustomFileMaterializer("tmp", "http://localhost:8080/tmp")))' seleniumJSHttpEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSHttpEnvTest/test
+  # Firefox tests `withKeepAlive()`
+  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox).withKeepAlive())' seleniumJSEnvTest/run
+  - killall -w firefox-bin
+  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox).withKeepAlive())' seleniumJSEnvTest/test
+  - killall -w firefox-bin
+  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox).withKeepAlive())' 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run
+  - killall -w firefox-bin
+  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Firefox).withKeepAlive())' 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/test
+  - killall -w firefox-bin
 scala:
   - 2.10.6
   - 2.11.7

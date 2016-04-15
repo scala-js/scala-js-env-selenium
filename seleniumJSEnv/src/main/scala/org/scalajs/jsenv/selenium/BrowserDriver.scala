@@ -1,12 +1,17 @@
 package org.scalajs.jsenv.selenium
 
+import java.{util => ju}
 import java.util.concurrent.TimeUnit
 
 import org.openqa.selenium.remote._
 
 import org.scalajs.jsenv.JSConsole
 
+import scala.annotation.tailrec
+import scala.collection.JavaConversions._
+
 abstract class BrowserDriver {
+  import BrowserDriver._
 
   private var webDriver: RemoteWebDriver = _
 
@@ -40,19 +45,32 @@ abstract class BrowserDriver {
    */
   final def processConsoleLogs(console: JSConsole): Unit = {
     try {
-      newConsoleLogsIterator().foreach(console.log)
+      @tailrec def processNextLogBatch(): Unit = {
+        getWebDriver.executeAsyncScript(popCapturedConsoleScript) match {
+          case logs: ju.List[_] =>
+            logs.foreach(console.log)
+            if (logs.size() != 0)
+              processNextLogBatch()
+
+          case msg => BrowserDriver.illFormattedScriptResult(msg)
+        }
+      }
+      processNextLogBatch()
     } catch {
       case _: BrowserDriver.BrowserNotOpenException => // Do nothing
     }
   }
-
-  protected def newConsoleLogsIterator(): Iterator[String]
 
   protected def newDriver(): RemoteWebDriver
 }
 
 object BrowserDriver {
   class BrowserNotOpenException extends Exception
+
+  private def popCapturedConsoleScript = {
+    "var callback = arguments[arguments.length - 1];" +
+    "callback(this.scalajsPopCapturedConsoleLogs());"
+  }
 
   private[selenium] def illFormattedScriptResult(obj: Any): Nothing = {
     throw new IllegalStateException(

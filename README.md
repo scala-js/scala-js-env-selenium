@@ -5,7 +5,7 @@
 ## Usage
 Simply add the following line to your `project/plugins.sbt`:
 ```scala
-libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "0.1.1"
+libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "0.1.2"
 ```
 and the following line to your sbt settings:
 ```scala

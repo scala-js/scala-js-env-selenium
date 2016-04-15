@@ -1,5 +1,9 @@
 package org.scalajs.jsenv.selenium
 
+import java.io.File
+
+import org.apache.commons.io.FileUtils
+
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.remote._
 import org.openqa.selenium.logging._
@@ -32,6 +36,15 @@ object Chrome extends SeleniumBrowser {
         // The message contains a prefix identifying the source ("\S+") of the
         // log followed by the line and column numbers ("\d+:\d+").
         entry.getMessage.replaceFirst("""\S+ \d+:\d+ """, "")
+      }
+    }
+
+    override protected def afterClose(): Unit = {
+      val tempDir = new File(System.getProperty("java.io.tmpdir"))
+      // Delete Google Chrome temp profiles
+      for (file <- tempDir.listFiles()) {
+        if (file.getName.matches("chrome-[0-9a-zA-Z]{6}"))
+          FileUtils.deleteDirectory(file)
       }
     }
   }

@@ -27,6 +27,7 @@ abstract class BrowserDriver {
   final def close(): Unit = synchronized {
     if (isOpened) {
       webDriver.close()
+      afterClose()
       webDriver = null
     }
   }
@@ -49,6 +50,8 @@ abstract class BrowserDriver {
   protected def newConsoleLogsIterator(): Iterator[String]
 
   protected def newDriver(): RemoteWebDriver
+
+  protected def afterClose(): Unit = ()
 }
 
 object BrowserDriver {

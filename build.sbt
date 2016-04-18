@@ -118,7 +118,7 @@ lazy val seleniumJSEnvTest: Project = project.
   enablePlugins(ScalaJSJUnitPlugin).
   settings(testSettings).
   settings(
-    jsEnv := new SeleniumJSEnv(Firefox)
+    jsEnv := new SeleniumJSEnv(Firefox())
   )
 
 lazy val seleniumJSHttpEnvTest: Project = project.
@@ -126,6 +126,6 @@ lazy val seleniumJSHttpEnvTest: Project = project.
   enablePlugins(ScalaJSJUnitPlugin).
   settings(testSettings).
   settings(
-    jsEnv := new SeleniumJSEnv(Firefox).
+    jsEnv := new SeleniumJSEnv(Firefox()).
       withMaterializer(new CustomFileMaterializer("tmp", "http://localhost:8080/tmp"))
   )

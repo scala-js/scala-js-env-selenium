@@ -15,8 +15,8 @@ jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(BROWSER)
 // Apply to tests
 jsEnv in Test := new org.scalajs.jsenv.selenium.SeleniumJSEnv(BROWSER)
 ```
-where the `BROWSER` can be either `org.scalajs.jsenv.selenium.Firefox` or
-`org.scalajs.jsenv.selenium.Chrome`.
+where the `BROWSER` can be either `org.scalajs.jsenv.selenium.Firefox()` or
+`org.scalajs.jsenv.selenium.Chrome()`.
 
 When executing the program with `run` a new browser window will be created,
 the code will be executed in it and finally the browser will close itself.

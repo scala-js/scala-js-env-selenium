@@ -2,6 +2,7 @@ package org.scalajs.jsenv.selenium
 
 import java.{util => ju}
 import java.util.concurrent.TimeUnit
+import java.util.logging.Level
 
 import org.openqa.selenium.remote._
 
@@ -59,6 +60,13 @@ abstract class BrowserDriver {
     } catch {
       case _: BrowserDriver.BrowserNotOpenException => // Do nothing
     }
+  }
+
+  def browserErrors(): List[String] = {
+    val logs = getWebDriver.manage().logs().get("browser").iterator()
+    logs.collect {
+      case log if log.getLevel == Level.SEVERE => log.getMessage
+    }.toList
   }
 
   protected def newDriver(): RemoteWebDriver

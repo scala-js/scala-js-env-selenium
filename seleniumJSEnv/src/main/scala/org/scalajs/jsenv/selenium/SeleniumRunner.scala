@@ -19,7 +19,14 @@ class SeleniumRunner(browserProvider: SeleniumBrowser,
     setupLoggerAndConsole(logger, console)
     browser.start()
     runAllScripts()
+    val browserErrors = browser.browserErrors()
+
     if (!keepAlive || ignoreKeepAlive)
       browser.close()
+
+    if (browserErrors.nonEmpty) {
+      val msg = ("Errors caught by browser:" :: browserErrors).mkString("\n")
+      throw new Exception(msg)
+    }
   }
 }

@@ -57,9 +57,11 @@ val previousArtifactSetting: Setting[_] = {
   }
 }
 
-val testSettings: Seq[Setting[_]] = commonSettings ++ Seq(
-  testOptions +=
-    Tests.Argument(TestFramework("com.novocode.junit.JUnitFramework"), "-v", "-a"),
+val baseTestSettings: Seq[Setting[_]] = commonSettings ++ Seq(
+  testOptions += Tests.Argument(TestFramework("com.novocode.junit.JUnitFramework"), "-v", "-a")
+)
+
+val testSettings: Seq[Setting[_]] = baseTestSettings ++ Seq(
   jsDependencies ++= Seq(
       RuntimeDOM % "test",
       "org.webjars" % "jquery" % "1.10.2" / "jquery.js"
@@ -113,11 +115,23 @@ lazy val seleniumJSEnv: Project = project.
     pomIncludeRepository := { _ => false }
   )
 
+lazy val seleniumJSEnvKitTest: Project = project.
+  settings(baseTestSettings).
+  settings(
+    parallelExecution in Test := false,
+    libraryDependencies ++= Seq(
+        "org.scala-js" %% "scalajs-js-envs-test-kit" % "0.6.9" % "test",
+        "com.novocode" % "junit-interface" % "0.11" % "test"
+    )
+  ).dependsOn(seleniumJSEnv % "test")
+
 lazy val seleniumJSEnvTest: Project = project.
   enablePlugins(ScalaJSPlugin).
   enablePlugins(ScalaJSJUnitPlugin).
   settings(testSettings).
   settings(
+    libraryDependencies +=
+      "org.scala-js" %% "scalajs-js-envs-test-kit" % "0.6.9",
     jsEnv := new SeleniumJSEnv(Firefox())
   )
 

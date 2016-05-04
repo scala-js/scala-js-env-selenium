@@ -38,7 +38,9 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
 
   def send(msg: String): Unit = {
     awaitForBrowser()
-    browser.getWebDriver.executeAsyncScript(sendScript, msg)
+    val encodedMsg =
+      msg.replace("&", "&&").replace("\u0000", "&0")
+    browser.getWebDriver.executeAsyncScript(sendScript, encodedMsg)
     browser.processConsoleLogs(console)
   }
 
@@ -51,7 +53,8 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
 
         case msg: String =>
           browser.processConsoleLogs(console)
-          msg
+          "&[0&]".r.replaceAllIn(msg, regMatch =>
+              if (regMatch.group(0) == "&&") "&" else "\u0000")
 
         case obj =>
           // Here we only try to get the console because it uses the same
@@ -93,7 +96,9 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
          |      receiveBuf = null;
          |    },
          |    send: function(msg) {
-         |      sendMsgBufIn.push(msg);
+         |      var encodedMsg =
+         |        msg.split("&").join("&&").split("\0").join("&0");
+         |      sendMsgBufIn.push(encodedMsg);
          |    },
          |    close: function() {
          |      // Nothing to close, channel is managed by Selenium.
@@ -109,10 +114,18 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
          |      return sendMsgBufOut.pop();
          |    },
          |    recvMessage: function(msg) {
-         |      if (onReceive != null)
-         |        onReceive(msg);
-         |      else
-         |        receiveBuf.push(msg);
+         |      var matcher = function (match) {
+         |        if (match == "&&")
+         |          return "&"
+         |        else
+         |          return "\0"
+         |      };
+         |      var decodedMsg = msg.replace(/(&&)|(&0)/g, matcher);
+         |      if (onReceive != null) {
+         |        onReceive(decodedMsg);
+         |      } else {
+         |        receiveBuf.push(decodedMsg);
+         |      }
          |    }
          |  };
          |}).call(this);

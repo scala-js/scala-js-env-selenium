@@ -76,8 +76,13 @@ object BrowserDriver {
   class BrowserNotOpenException extends Exception
 
   private def popCapturedConsoleScript = {
-    "var callback = arguments[arguments.length - 1];" +
-    "callback(this.scalajsPopCapturedConsoleLogs());"
+    """
+      |var callback = arguments[arguments.length - 1];
+      |if (this.scalajsPopCapturedConsoleLogs)
+      |  callback(this.scalajsPopCapturedConsoleLogs());
+      |else
+      |  callback([]);
+    """.stripMargin
   }
 
   private[selenium] def illFormattedScriptResult(obj: Any): Nothing = {

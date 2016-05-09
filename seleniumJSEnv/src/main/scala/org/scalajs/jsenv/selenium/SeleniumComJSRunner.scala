@@ -2,8 +2,7 @@ package org.scalajs.jsenv.selenium
 
 import org.scalajs.core.tools.io.{MemVirtualJSFile, VirtualJSFile}
 import org.scalajs.core.tools.jsdep.ResolvedJSDependency
-import org.scalajs.jsenv.ComJSRunner
-
+import org.scalajs.jsenv.{ComJSEnv, ComJSRunner}
 import java.util.concurrent.TimeoutException
 
 import scala.annotation.tailrec
@@ -15,6 +14,11 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
     libs: Seq[ResolvedJSDependency], code: VirtualJSFile, keepAlive: Boolean, materializer: FileMaterializer)
     extends SeleniumAsyncJSRunner(browserProvider, libs, code, keepAlive, materializer)
     with ComJSRunner {
+
+  private final val MESSAGE_TAG = "M"
+  private final val CLOSE_TAG = "CLOSE"
+
+  private var comClosed = false
 
   @deprecated("Use the overload with an explicit FileMaterializer.", "0.1.2")
   def this(browserProvider: SeleniumBrowser, libs: Seq[ResolvedJSDependency],
@@ -37,6 +41,8 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
   }
 
   def send(msg: String): Unit = {
+    if (comClosed)
+      throw new ComJSEnv.ComClosedException
     awaitForBrowser()
     val encodedMsg =
       msg.replace("&", "&&").replace("\u0000", "&0")
@@ -45,6 +51,8 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
   }
 
   def receive(timeout: Duration): String = {
+    if (comClosed)
+      throw new ComJSEnv.ComClosedException
     awaitForBrowser(timeout)
     @tailrec def loop(): String = {
       browser.getWebDriver.executeAsyncScript(receiveScript) match {
@@ -53,8 +61,15 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
 
         case msg: String =>
           browser.processConsoleLogs(console)
-          "&[0&]".r.replaceAllIn(msg, regMatch =>
-              if (regMatch.group(0) == "&&") "&" else "\u0000")
+          if (msg.startsWith(MESSAGE_TAG)) {
+            val taglessMsg = msg.substring(MESSAGE_TAG.length)
+            "&[0&]".r.replaceAllIn(taglessMsg, regMatch =>
+                if (regMatch.group(0) == "&&") "&" else "\u0000")
+          } else if (msg == CLOSE_TAG) {
+            throw new ComJSEnv.ComClosedException("Closed from browser.")
+          } else {
+            BrowserDriver.illFormattedScriptResult(msg)
+          }
 
         case obj =>
           // Here we only try to get the console because it uses the same
@@ -68,6 +83,7 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
 
   def close(): Unit = {
     browser.processConsoleLogs(console)
+    comClosed = true
     if (!keepAlive || ignoreKeepAlive)
       browser.close()
   }
@@ -98,10 +114,10 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
          |    send: function(msg) {
          |      var encodedMsg =
          |        msg.split("&").join("&&").split("\0").join("&0");
-         |      sendMsgBufIn.push(encodedMsg);
+         |      sendMsgBufIn.push("$MESSAGE_TAG" + encodedMsg);
          |    },
          |    close: function() {
-         |      // Nothing to close, channel is managed by Selenium.
+         |      sendMsgBufIn.push("$CLOSE_TAG");
          |    }
          |  };
          |

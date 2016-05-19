@@ -12,14 +12,14 @@ import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFil
 val previousVersion = "0.1.1"
 
 val scalaVersionsUsedForPublishing: Set[String] =
-  Set("2.10.6", "2.11.7", "2.12.0-M3")
+  Set("2.10.6", "2.11.8", "2.12.0-M4")
 val newScalaBinaryVersionsInThisRelease: Set[String] =
-  Set()
+  Set("2.12.0-M4")
 
 val commonSettings: Seq[Setting[_]] = Seq(
   version := "0.1.3-SNAPSHOT",
   organization := "org.scala-js",
-  scalaVersion := "2.11.7",
+  scalaVersion := "2.11.8",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),
 
   homepage := Some(url("http://scala-js.org/")),
@@ -75,7 +75,7 @@ lazy val seleniumJSEnv: Project = project.
     name := "scalajs-env-selenium",
 
     libraryDependencies ++= Seq(
-        "org.scala-js" %% "scalajs-js-envs" % "0.6.7",
+        "org.scala-js" %% "scalajs-js-envs" % "0.6.9",
         "org.seleniumhq.selenium" % "selenium-java" % "2.53.0",
         "org.seleniumhq.selenium" % "selenium-chrome-driver" % "2.53.0"
     ),

@@ -17,12 +17,15 @@ before_install:
 before_script:
   - python -m SimpleHTTPServer 8080 &
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/scalastyle seleniumJSEnv/test:scalastyle seleniumJSEnvTest/scalastyle seleniumJSHttpEnvTest/test:scalastyle seleniumJSEnvTest/test:scalastyle
+  - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/scalastyle seleniumJSEnv/test:scalastyle seleniumJSEnvTest/scalastyle seleniumJSHttpEnvTest/test:scalastyle seleniumJSEnvTest/test:scalastyle seleniumJSEnvKitTest/test:scalastyle
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/mimaReportBinaryIssues
+  # JSEnv test kit
   # Firefox tests
+  - sbt ++$TRAVIS_SCALA_VERSION 'seleniumJSEnvKitTest/testOnly org.scalajs.jsenv.selenium.firefox.*'
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnvTest/run seleniumJSEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSHttpEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSHttpEnvTest/test
   # Chrome tests
+    #  - sbt ++$TRAVIS_SCALA_VERSION 'seleniumJSEnvKitTest/testOnly org.scalajs.jsenv.selenium.chrome.*'
     #  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Chrome))' seleniumJSEnvTest/run seleniumJSEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSEnvTest/run seleniumJSEnvTest/test
     #  - sbt ++$TRAVIS_SCALA_VERSION 'set inScope(ThisScope in seleniumJSHttpEnvTest)(jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(org.scalajs.jsenv.selenium.Chrome).withMaterializer(new org.scalajs.jsenv.selenium.CustomFileMaterializer("tmp", "http://localhost:8080/tmp")))' seleniumJSHttpEnvTest/test 'set scalaJSStage in Global := FullOptStage' seleniumJSHttpEnvTest/test
   # Firefox tests `withKeepAlive()`
@@ -37,13 +40,13 @@ script:
 scala:
   - 2.10.6
   - 2.11.7
-  - 2.12.0-M3
+  - 2.12.0-M4
 jdk:
   - oraclejdk7
   - oraclejdk8
 matrix:
   exclude:
-    - scala: 2.12.0-M3
+    - scala: 2.12.0-M4
       jdk: oraclejdk7
 addons:
   firefox: latest

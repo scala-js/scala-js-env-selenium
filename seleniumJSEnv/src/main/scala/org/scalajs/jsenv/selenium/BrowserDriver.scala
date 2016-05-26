@@ -2,6 +2,7 @@ package org.scalajs.jsenv.selenium
 
 import java.{util => ju}
 import java.util.concurrent.TimeUnit
+import java.util.logging.Level
 
 import org.openqa.selenium.remote._
 
@@ -61,6 +62,13 @@ abstract class BrowserDriver {
     }
   }
 
+  def browserErrors(): List[String] = {
+    val logs = getWebDriver.manage().logs().get("browser").iterator()
+    logs.collect {
+      case log if log.getLevel == Level.SEVERE => log.getMessage
+    }.toList
+  }
+
   protected def newDriver(): RemoteWebDriver
 }
 
@@ -68,8 +76,13 @@ object BrowserDriver {
   class BrowserNotOpenException extends Exception
 
   private def popCapturedConsoleScript = {
-    "var callback = arguments[arguments.length - 1];" +
-    "callback(this.scalajsPopCapturedConsoleLogs());"
+    """
+      |var callback = arguments[arguments.length - 1];
+      |if (this.scalajsPopCapturedConsoleLogs)
+      |  callback(this.scalajsPopCapturedConsoleLogs());
+      |else
+      |  callback([]);
+    """.stripMargin
   }
 
   private[selenium] def illFormattedScriptResult(obj: Any): Nothing = {

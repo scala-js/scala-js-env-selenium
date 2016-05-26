@@ -1,6 +1,6 @@
 # scalajs-env-selenium
 
-[![Scala.js](https://www.scala-js.org/assets/badges/scalajs-0.6.6.svg)](https://www.scala-js.org/)
+[![Scala.js](https://www.scala-js.org/assets/badges/scalajs-0.6.8.svg)](https://www.scala-js.org/)
 
 ## Usage
 Simply add the following line to your `project/plugins.sbt`:

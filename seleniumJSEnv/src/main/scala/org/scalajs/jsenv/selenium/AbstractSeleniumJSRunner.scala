@@ -71,6 +71,7 @@ abstract class AbstractSeleniumJSRunner(browserProvider: SeleniumBrowser,
     val pageCode = {
       s"""<html>
          |  <meta charset="UTF-8">
+         |  <link rel="icon" href="data:;base64,=">
          |  <body>
          |    ${scriptTags.mkString("\n    ")}
          |  </body>

@@ -7,19 +7,19 @@ import org.scalajs.jsenv.selenium.Firefox
 import org.scalajs.jsenv.selenium.CustomFileMaterializer
 
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFilters}
+import com.typesafe.tools.mima.plugin.MimaKeys.{mimaPreviousArtifacts, mimaBinaryIssueFilters}
 
 val previousVersion = "0.1.3"
 
 val scalaVersionsUsedForPublishing: Set[String] =
-  Set("2.10.6", "2.11.8", "2.12.0-M4")
+  Set("2.10.6", "2.11.11", "2.12.2")
 val newScalaBinaryVersionsInThisRelease: Set[String] =
   Set()
 
 val commonSettings: Seq[Setting[_]] = Seq(
   version := "0.1.4-SNAPSHOT",
   organization := "org.scala-js",
-  scalaVersion := "2.11.8",
+  scalaVersion := "2.11.11",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),
 
   homepage := Some(url("http://scala-js.org/")),
@@ -32,15 +32,15 @@ val commonSettings: Seq[Setting[_]] = Seq(
 ) ++ mimaDefaultSettings
 
 val previousArtifactSetting: Setting[_] = {
-  previousArtifact := {
+  mimaPreviousArtifacts := {
     val scalaV = scalaVersion.value
     val scalaBinaryV = scalaBinaryVersion.value
     if (!scalaVersionsUsedForPublishing.contains(scalaV)) {
       // This artifact will not be published. Binary compatibility is irrelevant.
-      None
+      Set.empty
     } else if (newScalaBinaryVersionsInThisRelease.contains(scalaBinaryV)) {
       // New in this release, no binary compatibility to comply to
-      None
+      Set.empty
     } else {
       val thisProjectID = projectID.value
       /* Filter out e:info.apiURL as it expects 0.6.7-SNAPSHOT, whereas the
@@ -52,7 +52,7 @@ val previousArtifactSetting: Setting[_] = {
         (thisProjectID.organization % thisProjectID.name % previousVersion)
             .cross(thisProjectID.crossVersion)
             .extra(prevExtraAttributes.toSeq: _*)
-      Some(CrossVersion(scalaV, scalaBinaryV)(prevProjectID).cross(CrossVersion.Disabled))
+      Set(CrossVersion(scalaV, scalaBinaryV)(prevProjectID).cross(CrossVersion.Disabled))
     }
   }
 }
@@ -64,7 +64,7 @@ val baseTestSettings: Seq[Setting[_]] = commonSettings ++ Seq(
 val testSettings: Seq[Setting[_]] = baseTestSettings ++ Seq(
   jsDependencies ++= Seq(
       RuntimeDOM % "test",
-      "org.webjars" % "jquery" % "1.10.2" / "jquery.js"
+      "org.webjars" % "jquery" % "3.2.0" / "jquery.js"
   )
 )
 
@@ -77,13 +77,13 @@ lazy val seleniumJSEnv: Project = project.
     name := "scalajs-env-selenium",
 
     libraryDependencies ++= Seq(
-        "org.scala-js" %% "scalajs-js-envs" % "0.6.9",
-        "org.seleniumhq.selenium" % "selenium-java" % "2.53.0",
-        "org.seleniumhq.selenium" % "selenium-chrome-driver" % "2.53.0"
+        "org.scala-js" %% "scalajs-js-envs" % "0.6.16",
+        "org.seleniumhq.selenium" % "selenium-java" % "3.4.0",
+        "org.seleniumhq.selenium" % "selenium-chrome-driver" % "3.4.0"
     ),
 
     previousArtifactSetting,
-    binaryIssueFilters ++= BinaryIncompatibilities.SeleniumJSEnv,
+    mimaBinaryIssueFilters ++= BinaryIncompatibilities.SeleniumJSEnv,
 
     publishMavenStyle := true,
     publishTo := {
@@ -120,7 +120,7 @@ lazy val seleniumJSEnvKitTest: Project = project.
   settings(
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-        "org.scala-js" %% "scalajs-js-envs-test-kit" % "0.6.9" % "test",
+        "org.scala-js" %% "scalajs-js-envs-test-kit" % "0.6.16" % "test",
         "com.novocode" % "junit-interface" % "0.11" % "test"
     )
   ).dependsOn(seleniumJSEnv % "test")
@@ -131,7 +131,7 @@ lazy val seleniumJSEnvTest: Project = project.
   settings(testSettings).
   settings(
     libraryDependencies +=
-      "org.scala-js" %% "scalajs-js-envs-test-kit" % "0.6.9",
+      "org.scala-js" %% "scalajs-js-envs-test-kit" % "0.6.16",
     jsEnv := new SeleniumJSEnv(Firefox())
   )
 

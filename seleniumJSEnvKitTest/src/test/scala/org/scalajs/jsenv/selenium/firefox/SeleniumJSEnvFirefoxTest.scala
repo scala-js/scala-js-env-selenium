@@ -8,12 +8,6 @@ import org.junit._
 class SeleniumJSEnvFirefoxTest extends TimeoutComTests {
   protected def newJSEnv: SeleniumJSEnv = new SeleniumJSEnv(Firefox())
 
-  @Ignore("Stop does not work properly, issue #54.")
-  @Test override def stopTestCom: Unit = super.stopTestCom
-
-  @Ignore("Stop does not work properly, issue #54.")
-  @Test override def futureStopTest: Unit = super.futureStopTest
-
   @Ignore("Not waiting for event loop to finish, issue #55.")
   @Test
   override def basicTimeoutTest: Unit = super.basicTimeoutTest
@@ -37,4 +31,17 @@ class SeleniumJSEnvFirefoxTest extends TimeoutComTests {
   @Ignore("Not waiting for event loop to finish, issue #55.")
   @Test
   override def receiveTimeoutTest: Unit = super.receiveTimeoutTest
+
+  @Ignore("W3C WebDriver spec lacks log interface, issue #64")
+  @Test
+  override def timeoutSingleArgTest: Unit = super.timeoutArgTest
+
+  @Ignore("W3C WebDriver spec lacks log interface, issue #64")
+  @Test // Failed in Phantom - #2053
+  override def utf8Test: Unit = super.utf8Test
+
+  @Ignore("W3C WebDriver spec lacks log interface, issue #64")
+  @Test
+  override def allowScriptTags: Unit = super.allowScriptTags
+
 }

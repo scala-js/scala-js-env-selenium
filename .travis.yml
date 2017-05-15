@@ -15,6 +15,7 @@ before_install:
     #  - unzip chromedriver_linux64.zip -d selenium-bin
     #  - export PATH=$PWD/selenium-bin:$PATH
 before_script:
+  - sudo chmod +x /usr/local/bin/sbt
   - python -m SimpleHTTPServer 8080 &
 script:
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/scalastyle seleniumJSEnv/test:scalastyle seleniumJSEnvTest/scalastyle seleniumJSHttpEnvTest/test:scalastyle seleniumJSEnvTest/test:scalastyle seleniumJSEnvKitTest/test:scalastyle

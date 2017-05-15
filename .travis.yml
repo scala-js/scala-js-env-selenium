@@ -39,14 +39,14 @@ script:
   - killall -w firefox-bin
 scala:
   - 2.10.6
-  - 2.11.7
-  - 2.12.0-M4
+  - 2.11.11
+  - 2.12.2
 jdk:
   - oraclejdk7
   - oraclejdk8
 matrix:
   exclude:
-    - scala: 2.12.0-M4
+    - scala: 2.12.2
       jdk: oraclejdk7
 addons:
   firefox: latest

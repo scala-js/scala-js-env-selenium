@@ -9,7 +9,7 @@ import org.openqa.selenium.remote._
 import org.scalajs.jsenv.JSConsole
 
 import scala.annotation.tailrec
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 abstract class BrowserDriver {
   import BrowserDriver._
@@ -26,7 +26,7 @@ abstract class BrowserDriver {
   final def start(): Unit = synchronized {
     assert(!isOpened, "start() may only start one instance at a time.")
     webDriver = newDriver()
-    webDriver.manage().timeouts().setScriptTimeout(-1, TimeUnit.SECONDS)
+    webDriver.manage().timeouts().setScriptTimeout(30000L, TimeUnit.SECONDS)
   }
 
   /** Closes the instance of the browser. */
@@ -49,7 +49,7 @@ abstract class BrowserDriver {
       @tailrec def processNextLogBatch(): Unit = {
         getWebDriver.executeAsyncScript(popCapturedConsoleScript) match {
           case logs: ju.List[_] =>
-            logs.foreach(console.log)
+            logs.asScala.toList.foreach(console.log)
             if (logs.size() != 0)
               processNextLogBatch()
 
@@ -64,7 +64,7 @@ abstract class BrowserDriver {
 
   def browserErrors(): List[String] = {
     val logs = getWebDriver.manage().logs().get("browser").iterator()
-    logs.collect {
+    logs.asScala.toList.collect {
       case log if log.getLevel == Level.SEVERE => log.getMessage
     }.toList
   }

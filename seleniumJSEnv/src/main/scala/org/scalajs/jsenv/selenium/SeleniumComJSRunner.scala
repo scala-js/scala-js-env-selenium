@@ -96,8 +96,7 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
       s"""
          |(function() {
          |  // Buffers for outgoing messages
-         |  var sendMsgBufIn = []; // push to this one
-         |  var sendMsgBufOut = []; // pop from this one
+         |  var sendMsgBuf = [];
          |
          |  // Buffer for incoming messages (used if onReceive not initialized)
          |  var receiveBuf = [];
@@ -114,21 +113,15 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
          |    send: function(msg) {
          |      var encodedMsg =
          |        msg.split("&").join("&&").split("\0").join("&0");
-         |      sendMsgBufIn.push("$MESSAGE_TAG" + encodedMsg);
+         |      sendMsgBuf.push("$MESSAGE_TAG" + encodedMsg);
          |    },
          |    close: function() {
-         |      sendMsgBufIn.push("$CLOSE_TAG");
+         |      sendMsgBuf.push("$CLOSE_TAG");
          |    }
          |  };
          |
          |  this.scalajsSeleniumComJSRunnerChannel = {
-         |    popOutMsg: function() {
-         |      if (sendMsgBufOut.length == 0) {
-         |        sendMsgBufOut = sendMsgBufIn.reverse();
-         |        sendMsgBufIn = [];
-         |      }
-         |      return sendMsgBufOut.pop();
-         |    },
+         |    popOutMsg: function() { return sendMsgBuf.shift(); },
          |    recvMessage: function(msg) {
          |      var matcher = function (match) {
          |        if (match == "&&")

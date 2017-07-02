@@ -75,13 +75,16 @@ name := "root"
 
 lazy val seleniumJSEnv: Project = project.
   settings(commonSettings).
+  settings(baseTestSettings).
   settings(
     name := "scalajs-env-selenium",
 
     libraryDependencies ++= Seq(
         "org.scala-js" %% "scalajs-js-envs" % scalaJSVersion,
         "org.seleniumhq.selenium" % "selenium-java" % "2.53.0",
-        "org.seleniumhq.selenium" % "selenium-chrome-driver" % "2.53.0"
+        "org.seleniumhq.selenium" % "selenium-chrome-driver" % "2.53.0",
+        "org.scala-js" %% "scalajs-js-envs-test-kit" % scalaJSVersion % "test",
+        "com.novocode" % "junit-interface" % "0.11" % "test"
     ),
 
     previousArtifactSetting,
@@ -114,28 +117,16 @@ lazy val seleniumJSEnv: Project = project.
         </developer>
       </developers>
     ),
-    pomIncludeRepository := { _ => false }
-  )
+    pomIncludeRepository := { _ => false },
 
-lazy val seleniumJSEnvKitTest: Project = project.
-  settings(baseTestSettings).
-  settings(
-    parallelExecution in Test := false,
-    libraryDependencies ++= Seq(
-        "org.scala-js" %% "scalajs-js-envs-test-kit" % scalaJSVersion % "test",
-        "com.novocode" % "junit-interface" % "0.11" % "test"
-    )
-  ).dependsOn(seleniumJSEnv % "test")
+    parallelExecution in Test := false
+  )
 
 lazy val seleniumJSEnvTest: Project = project.
   enablePlugins(ScalaJSPlugin).
   enablePlugins(ScalaJSJUnitPlugin).
   settings(testSettings).
-  settings(
-    libraryDependencies +=
-      "org.scala-js" %% "scalajs-js-envs-test-kit" % "0.6.9",
-    jsEnv := new SeleniumJSEnv(Firefox())
-  )
+  settings(jsEnv := new SeleniumJSEnv(Firefox()))
 
 lazy val seleniumJSHttpEnvTest: Project = project.
   enablePlugins(ScalaJSPlugin).

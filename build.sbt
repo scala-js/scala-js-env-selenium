@@ -12,14 +12,14 @@ import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFil
 val previousVersion = None
 
 val scalaVersionsUsedForPublishing: Set[String] =
-  Set("2.10.6", "2.11.8", "2.12.0-M4")
+  Set("2.10.6", "2.11.11", "2.12.2")
 val newScalaBinaryVersionsInThisRelease: Set[String] =
-  Set()
+  Set("2.12")
 
 val commonSettings: Seq[Setting[_]] = Seq(
   version := "0.2.0-SNAPSHOT",
   organization := "org.scala-js",
-  scalaVersion := "2.11.8",
+  scalaVersion := "2.11.11",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),
 
   homepage := Some(url("http://scala-js.org/")),
@@ -79,7 +79,7 @@ lazy val seleniumJSEnv: Project = project.
     name := "scalajs-env-selenium",
 
     libraryDependencies ++= Seq(
-        "org.scala-js" %% "scalajs-js-envs" % "0.6.9",
+        "org.scala-js" %% "scalajs-js-envs" % scalaJSVersion,
         "org.seleniumhq.selenium" % "selenium-java" % "2.53.0",
         "org.seleniumhq.selenium" % "selenium-chrome-driver" % "2.53.0"
     ),
@@ -122,7 +122,7 @@ lazy val seleniumJSEnvKitTest: Project = project.
   settings(
     parallelExecution in Test := false,
     libraryDependencies ++= Seq(
-        "org.scala-js" %% "scalajs-js-envs-test-kit" % "0.6.9" % "test",
+        "org.scala-js" %% "scalajs-js-envs-test-kit" % scalaJSVersion % "test",
         "com.novocode" % "junit-interface" % "0.11" % "test"
     )
   ).dependsOn(seleniumJSEnv % "test")

@@ -26,7 +26,6 @@ abstract class BrowserDriver {
   final def start(): Unit = synchronized {
     assert(!isOpened, "start() may only start one instance at a time.")
     webDriver = newDriver()
-    webDriver.manage().timeouts().setScriptTimeout(-1, TimeUnit.SECONDS)
   }
 
   /** Closes the instance of the browser. */
@@ -47,7 +46,8 @@ abstract class BrowserDriver {
   final def processConsoleLogs(console: JSConsole): Unit = {
     try {
       @tailrec def processNextLogBatch(): Unit = {
-        getWebDriver.executeAsyncScript(popCapturedConsoleScript) match {
+        val code = "return this.scalajsPopCapturedConsoleLogs()"
+        getWebDriver.executeScript(code) match {
           case logs: ju.List[_] =>
             logs.foreach(console.log)
             if (logs.size() != 0)
@@ -74,16 +74,6 @@ abstract class BrowserDriver {
 
 object BrowserDriver {
   class BrowserNotOpenException extends Exception
-
-  private def popCapturedConsoleScript = {
-    """
-      |var callback = arguments[arguments.length - 1];
-      |if (this.scalajsPopCapturedConsoleLogs)
-      |  callback(this.scalajsPopCapturedConsoleLogs());
-      |else
-      |  callback([]);
-    """.stripMargin
-  }
 
   private[selenium] def illFormattedScriptResult(obj: Any): Nothing = {
     throw new IllegalStateException(

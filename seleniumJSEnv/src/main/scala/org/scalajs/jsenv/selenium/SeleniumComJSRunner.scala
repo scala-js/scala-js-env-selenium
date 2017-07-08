@@ -29,24 +29,15 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
   protected def envName: String =
     "SeleniumComJSRunner on " + browserProvider.name
 
-  private final val sendScript = {
-    "var callback = arguments[arguments.length - 1];" +
-    "this.scalajsSeleniumComJSRunnerChannel.recvMessage(arguments[0]);" +
-    "callback();"
-  }
-
-  private final val receiveScript = {
-    "var callback = arguments[arguments.length - 1];" +
-    "callback(this.scalajsSeleniumComJSRunnerChannel.popOutMsg());"
-  }
-
   def send(msg: String): Unit = {
     if (comClosed)
       throw new ComJSEnv.ComClosedException
     awaitForBrowser()
     val encodedMsg =
       msg.replace("&", "&&").replace("\u0000", "&0")
-    browser.getWebDriver.executeAsyncScript(sendScript, encodedMsg)
+    val code =
+      "this.scalajsSeleniumComJSRunnerChannel.recvMessage(arguments[0]);";
+    browser.getWebDriver.executeScript(code, encodedMsg);
     browser.processConsoleLogs(console)
   }
 
@@ -55,7 +46,8 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
       throw new ComJSEnv.ComClosedException
     awaitForBrowser(timeout)
     @tailrec def loop(): String = {
-      browser.getWebDriver.executeAsyncScript(receiveScript) match {
+      val code = "return this.scalajsSeleniumComJSRunnerChannel.popOutMsg();"
+      browser.getWebDriver.executeScript(code) match {
         case null =>
           loop()
 

@@ -9,7 +9,7 @@ import org.scalajs.jsenv.selenium.CustomFileMaterializer
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFilters}
 
-val previousVersion = "0.1.3"
+val previousVersion = None
 
 val scalaVersionsUsedForPublishing: Set[String] =
   Set("2.10.6", "2.11.8", "2.12.0-M4")
@@ -17,7 +17,7 @@ val newScalaBinaryVersionsInThisRelease: Set[String] =
   Set()
 
 val commonSettings: Seq[Setting[_]] = Seq(
-  version := "0.1.4-SNAPSHOT",
+  version := "0.2.0-SNAPSHOT",
   organization := "org.scala-js",
   scalaVersion := "2.11.8",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),
@@ -42,17 +42,19 @@ val previousArtifactSetting: Setting[_] = {
       // New in this release, no binary compatibility to comply to
       None
     } else {
-      val thisProjectID = projectID.value
-      /* Filter out e:info.apiURL as it expects 0.6.7-SNAPSHOT, whereas the
-       * artifact we're looking for has 0.6.6 (for example).
-       */
-      val prevExtraAttributes =
-        thisProjectID.extraAttributes.filterKeys(_ != "e:info.apiURL")
-      val prevProjectID =
-        (thisProjectID.organization % thisProjectID.name % previousVersion)
-            .cross(thisProjectID.crossVersion)
-            .extra(prevExtraAttributes.toSeq: _*)
-      Some(CrossVersion(scalaV, scalaBinaryV)(prevProjectID).cross(CrossVersion.Disabled))
+      previousVersion.map { pv =>
+        val thisProjectID = projectID.value
+        /* Filter out e:info.apiURL as it expects 0.6.7-SNAPSHOT, whereas the
+         * artifact we're looking for has 0.6.6 (for example).
+         */
+        val prevExtraAttributes =
+          thisProjectID.extraAttributes.filterKeys(_ != "e:info.apiURL")
+        val prevProjectID =
+          (thisProjectID.organization % thisProjectID.name % pv)
+              .cross(thisProjectID.crossVersion)
+              .extra(prevExtraAttributes.toSeq: _*)
+        CrossVersion(scalaV, scalaBinaryV)(prevProjectID).cross(CrossVersion.Disabled)
+      }
     }
   }
 }

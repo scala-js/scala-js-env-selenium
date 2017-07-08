@@ -20,12 +20,6 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
 
   private var comClosed = false
 
-  @deprecated("Use the overload with an explicit FileMaterializer.", "0.1.2")
-  def this(browserProvider: SeleniumBrowser, libs: Seq[ResolvedJSDependency],
-      code: VirtualJSFile, keepAlive: Boolean) = {
-    this(browserProvider, libs, code, keepAlive, DefaultFileMaterializer)
-  }
-
   protected def envName: String =
     "SeleniumComJSRunner on " + browserProvider.name
 

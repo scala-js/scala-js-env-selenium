@@ -14,12 +14,6 @@ class SeleniumAsyncJSRunner(browserProvider: SeleniumBrowser,
     extends AbstractSeleniumJSRunner(browserProvider, libs, code, materializer)
     with AsyncJSRunner {
 
-  @deprecated("Use the overload with an explicit FileMaterializer.", "0.1.2")
-  def this(browserProvider: SeleniumBrowser, libs: Seq[ResolvedJSDependency],
-      code: VirtualJSFile, keepAlive: Boolean) = {
-    this(browserProvider, libs, code, keepAlive, DefaultFileMaterializer)
-  }
-
   private[this] var promise = Promise[Unit]()
 
   def future: Future[Unit] = promise.future

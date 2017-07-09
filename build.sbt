@@ -1,9 +1,10 @@
 import sbt.Keys._
 
-import  org.scalajs.sbtplugin.ScalaJSCrossVersion
+import org.scalajs.sbtplugin.ScalaJSCrossVersion
+
+import org.openqa.selenium.remote.DesiredCapabilities
 
 import org.scalajs.jsenv.selenium.SeleniumJSEnv
-import org.scalajs.jsenv.selenium.Firefox
 import org.scalajs.jsenv.selenium.CustomFileMaterializer
 
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
@@ -80,9 +81,12 @@ lazy val seleniumJSEnv: Project = project.
     name := "scalajs-env-selenium",
 
     libraryDependencies ++= Seq(
+        /* Make sure selenium is before scalajs-envs:
+         * It pulls in "closure-compiler-java-6" which in turn bundles some old
+         * guava stuff which in turn makes selenium fail.
+         */
+        "org.seleniumhq.selenium" % "selenium-server" % "3.4.0",
         "org.scala-js" %% "scalajs-js-envs" % scalaJSVersion,
-        "org.seleniumhq.selenium" % "selenium-java" % "2.53.0",
-        "org.seleniumhq.selenium" % "selenium-chrome-driver" % "2.53.0",
         "org.scala-js" %% "scalajs-js-envs-test-kit" % scalaJSVersion % "test",
         "com.novocode" % "junit-interface" % "0.11" % "test"
     ),
@@ -126,13 +130,18 @@ lazy val seleniumJSEnvTest: Project = project.
   enablePlugins(ScalaJSPlugin).
   enablePlugins(ScalaJSJUnitPlugin).
   settings(testSettings).
-  settings(jsEnv := new SeleniumJSEnv(Firefox()))
+  settings(jsEnv := new SeleniumJSEnv(DesiredCapabilities.firefox()))
 
 lazy val seleniumJSHttpEnvTest: Project = project.
   enablePlugins(ScalaJSPlugin).
   enablePlugins(ScalaJSJUnitPlugin).
   settings(testSettings).
   settings(
-    jsEnv := new SeleniumJSEnv(Firefox()).
-      withMaterializer(new CustomFileMaterializer("tmp", "http://localhost:8080/tmp"))
+    jsEnv := {
+      new SeleniumJSEnv(
+          DesiredCapabilities.firefox(),
+          SeleniumJSEnv.Config()
+            .withMaterializer(new CustomFileMaterializer("tmp", "http://localhost:8080/tmp"))
+      )
+    }
   )

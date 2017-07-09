@@ -10,18 +10,17 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
-    libs: Seq[ResolvedJSDependency], code: VirtualJSFile, keepAlive: Boolean, materializer: FileMaterializer)
-    extends SeleniumAsyncJSRunner(browserProvider, libs, code, keepAlive, materializer)
+private[selenium] class SeleniumComJSRunner(
+    factory: AbstractSeleniumJSRunner.DriverFactory,
+    libs: Seq[ResolvedJSDependency], code: VirtualJSFile,
+    config: SeleniumJSEnv.Config)
+    extends SeleniumAsyncJSRunner(factory, libs, code, config)
     with ComJSRunner {
 
   private final val MESSAGE_TAG = "M"
   private final val CLOSE_TAG = "CLOSE"
 
   private var comClosed = false
-
-  protected def envName: String =
-    "SeleniumComJSRunner on " + browserProvider.name
 
   def send(msg: String): Unit = {
     if (comClosed)
@@ -31,8 +30,8 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
       msg.replace("&", "&&").replace("\u0000", "&0")
     val code =
       "this.scalajsSeleniumComJSRunnerChannel.recvMessage(arguments[0]);";
-    browser.getWebDriver.executeScript(code, encodedMsg);
-    browser.processConsoleLogs(console)
+    driver.executeScript(code, encodedMsg);
+    processConsoleLogs(console)
   }
 
   def receive(timeout: Duration): String = {
@@ -41,12 +40,12 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
     awaitForBrowser(timeout)
     @tailrec def loop(): String = {
       val code = "return this.scalajsSeleniumComJSRunnerChannel.popOutMsg();"
-      browser.getWebDriver.executeScript(code) match {
+      driver.executeScript(code) match {
         case null =>
           loop()
 
         case msg: String =>
-          browser.processConsoleLogs(console)
+          processConsoleLogs(console)
           if (msg.startsWith(MESSAGE_TAG)) {
             val taglessMsg = msg.substring(MESSAGE_TAG.length)
             "&[0&]".r.replaceAllIn(taglessMsg, regMatch =>
@@ -54,24 +53,24 @@ class SeleniumComJSRunner(browserProvider: SeleniumBrowser,
           } else if (msg == CLOSE_TAG) {
             throw new ComJSEnv.ComClosedException("Closed from browser.")
           } else {
-            BrowserDriver.illFormattedScriptResult(msg)
+            illFormattedScriptResult(msg)
           }
 
         case obj =>
           // Here we only try to get the console because it uses the same
           // communication channel that is potentially corrupted.
-          Try(browser.processConsoleLogs(console))
-          BrowserDriver.illFormattedScriptResult(obj)
+          Try(processConsoleLogs(console))
+          illFormattedScriptResult(obj)
       }
     }
     loop()
   }
 
-  def close(): Unit = {
-    browser.processConsoleLogs(console)
+  override def close(): Unit = {
+    processConsoleLogs(console)
     comClosed = true
-    if (!keepAlive || ignoreKeepAlive)
-      browser.close()
+    if (!config.keepAlive || ignoreKeepAlive)
+      super.close()
   }
 
   override protected def initFiles(): Seq[VirtualJSFile] =

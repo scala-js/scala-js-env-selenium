@@ -1,12 +1,15 @@
 package org.scalajs.jsenv.selenium.chrome
 
-import org.scalajs.jsenv.selenium.{Chrome, SeleniumJSEnv}
+import org.openqa.selenium.remote.DesiredCapabilities
+
+import org.scalajs.jsenv.selenium.SeleniumJSEnv
 import org.scalajs.jsenv.test._
 
 import org.junit._
 
 class SeleniumJSEnvChromeTest extends TimeoutComTests {
-  protected def newJSEnv: SeleniumJSEnv = new SeleniumJSEnv(Chrome())
+  protected def newJSEnv: SeleniumJSEnv =
+    new SeleniumJSEnv(DesiredCapabilities.chrome())
 
   @Ignore("Stop does not work properly, issue #54.")
   @Test override def stopTestCom: Unit = super.stopTestCom

@@ -5,20 +5,22 @@ import org.scalajs.core.tools.jsdep.ResolvedJSDependency
 import org.scalajs.core.tools.logging.Logger
 import org.scalajs.jsenv.{JSConsole, JSRunner}
 
-class SeleniumRunner(browserProvider: SeleniumBrowser,
-    libs: Seq[ResolvedJSDependency], code: VirtualJSFile, keepAlive: Boolean, materializer: FileMaterializer)
-    extends AbstractSeleniumJSRunner(browserProvider, libs, code, materializer) with JSRunner {
+private[selenium] class SeleniumRunner(
+    factory: AbstractSeleniumJSRunner.DriverFactory,
+    libs: Seq[ResolvedJSDependency], code: VirtualJSFile,
+    config: SeleniumJSEnv.Config)
+    extends AbstractSeleniumJSRunner(factory, libs, code, config) with JSRunner {
 
   def run(logger: Logger, console: JSConsole): Unit = {
     setupLoggerAndConsole(logger, console)
-    browser.start()
+    start()
     runAllScripts()
-    val browserErrors = browser.browserErrors()
+    val errs = browserErrors()
 
-    if (!keepAlive || ignoreKeepAlive)
-      browser.close()
+    if (!config.keepAlive || ignoreKeepAlive)
+      close()
 
-    if (browserErrors.nonEmpty) {
+    if (errs.nonEmpty) {
       val msg = ("Errors caught by browser:" :: browserErrors).mkString("\n")
       throw new Exception(msg)
     }

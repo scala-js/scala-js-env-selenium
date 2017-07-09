@@ -12,13 +12,10 @@ private[selenium] class SeleniumRunner(
     extends AbstractSeleniumJSRunner(factory, libs, code, config) with JSRunner {
 
   def run(logger: Logger, console: JSConsole): Unit = {
-    setupLoggerAndConsole(logger, console)
-    start()
+    startInternal(logger, console)
     runAllScripts()
     val errs = browserErrors()
-
-    if (!config.keepAlive || ignoreKeepAlive)
-      close()
+    stop()
 
     if (errs.nonEmpty) {
       val msg = ("Errors caught by browser:" :: browserErrors).mkString("\n")

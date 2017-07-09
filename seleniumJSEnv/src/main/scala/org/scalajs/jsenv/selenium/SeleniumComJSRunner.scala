@@ -66,11 +66,14 @@ private[selenium] class SeleniumComJSRunner(
     loop()
   }
 
-  override def close(): Unit = {
+  override def stop(): Unit = synchronized {
+    close()
+    super.stop()
+  }
+
+  override def close(): Unit = synchronized {
     processConsoleLogs(console)
     comClosed = true
-    if (!config.keepAlive || ignoreKeepAlive)
-      super.close()
   }
 
   override protected def initFiles(): Seq[VirtualJSFile] =

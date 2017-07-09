@@ -23,25 +23,22 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
   protected def console: JSConsole = _console
   protected def driver: WebDriver with JavascriptExecutor = _driver
 
-  protected def setupLoggerAndConsole(logger: Logger, console: JSConsole): Unit = {
+  protected def startInternal(logger: Logger, console: JSConsole): Unit = synchronized {
+    require(_driver == null, "start() may only start one instance at a time.")
     require(_logger == null && _console == null)
     _logger = logger
     _console = console
-  }
-
-  protected def start(): Unit = synchronized {
-    assert(_driver == null, "start() may only start one instance at a time.")
     _driver = factory()
   }
 
-  protected def close(): Unit = synchronized {
-    if (_driver != null) {
+  def stop(): Unit = synchronized {
+    if ((!config.keepAlive || ignoreKeepAlive) && _driver != null) {
       _driver.close()
       _driver = null
     }
   }
 
-  protected def ignoreKeepAlive: Boolean = {
+  private def ignoreKeepAlive: Boolean = {
     val name = code.name
     name == "frameworkDetector.js" ||
     name == "testFrameworkInfo.js" ||
@@ -52,16 +49,8 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
     setupConsoleCapture() ++ runtimeEnv()
 
   protected def runAllScripts(): Unit = {
-    val inits = initFiles()
-
-    val jsFiles = {
-      inits.map(config.materializer.materialize(_).toString) ++
-      libs.map(dep => config.materializer.materialize(dep.lib).toString) :+
-      code.path
-    }
-    val page = htmlPage(jsFiles)
-
-    config.materializer.materialize(code)
+    val jsFiles = initFiles() ++ libs.map(_.lib) :+ code
+    val page = htmlPage(jsFiles.map(config.materializer.materialize _))
     val pageURL = config.materializer.materialize(page)
 
     driver.get(pageURL.toString)
@@ -136,15 +125,16 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
   )
 
   /** File(s) to define `__ScalaJSEnv`. Defines `exitFunction`. */
-  protected def runtimeEnv(): Seq[VirtualJSFile] = Seq(
+  private def runtimeEnv(): Seq[VirtualJSFile] = Seq(
     new MemVirtualJSFile("scalaJSEnvInfo.js").withContent(
       "var __ScalaJSEnv = __ScalaJSEnv || {};\n" +
       "__ScalaJSEnv.existFunction = function(status) { window.close(); };"
     )
   )
 
-  protected def htmlPage(jsFilesPaths: Seq[String]): VirtualJSFile = {
-    val scriptTags = jsFilesPaths.map(path => s"<script src='$path'></script>")
+  private def htmlPage(scripts: Seq[java.net.URL]): VirtualJSFile = {
+    val scriptTags =
+      scripts.map(path => s"<script src='${path.toString}'></script>")
     val pageCode = {
       s"""<html>
          |  <meta charset="UTF-8">
@@ -160,6 +150,11 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
   protected def illFormattedScriptResult(obj: Any): Nothing = {
     throw new IllegalStateException(
         s"Receive ill formed message of type ${obj.getClass} with value: $obj")
+  }
+
+  protected override def finalize(): Unit = {
+    stop()
+    super.finalize()
   }
 }
 

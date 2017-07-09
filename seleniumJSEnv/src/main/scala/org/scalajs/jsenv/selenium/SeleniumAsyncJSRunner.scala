@@ -21,16 +21,10 @@ private[selenium] class SeleniumAsyncJSRunner(
   def future: Future[Unit] = promise.future
 
   def start(logger: Logger, console: JSConsole): Future[Unit] = synchronized {
-    setupLoggerAndConsole(logger, console)
-    start()
+    startInternal(logger, console)
     promise = Promise[Unit]()
     (new SeleniumAsyncJSRunnerThread).start()
     future
-  }
-
-  override def stop(): Unit = synchronized {
-    if (!config.keepAlive || ignoreKeepAlive)
-      close()
   }
 
   private class SeleniumAsyncJSRunnerThread extends Thread {

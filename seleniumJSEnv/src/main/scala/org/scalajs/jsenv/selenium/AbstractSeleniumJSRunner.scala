@@ -46,7 +46,7 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
   }
 
   protected def initFiles(): Seq[VirtualJSFile] =
-    setupConsoleCapture() ++ runtimeEnv()
+    setupCapture() ++ runtimeEnv()
 
   protected def runAllScripts(): Unit = {
     val jsFiles = initFiles() ++ libs.map(_.lib) :+ code
@@ -57,67 +57,63 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
     processConsoleLogs(console)
   }
 
-  /** Tries to get the console logs from the browser and prints them on the
-   *  JSConsole.
-   */
-  final protected def processConsoleLogs(console: JSConsole): Unit = {
+  private def callPop(cmd: String): Seq[_] = {
     if (_driver != null) {
-      @tailrec def processNextLogBatch(): Unit = {
-        val code = "return this.scalajsPopCapturedConsoleLogs()"
-        driver.executeScript(code) match {
-          case logs: java.util.List[_] =>
-            logs.asScala.foreach(console.log)
-            if (logs.size() != 0)
-              processNextLogBatch()
-
-          case msg => illFormattedScriptResult(msg)
-        }
+      /* We need to check the existence of the command since we race with the
+       * browser setup.
+       */
+      val code = s"return this.$cmd && this.$cmd();"
+      driver.executeScript(code) match {
+        case null                    => Seq()
+        case logs: java.util.List[_] => logs.asScala
+        case msg                     => illFormattedScriptResult(msg)
       }
-      processNextLogBatch()
+    } else {
+      Seq()
     }
   }
 
-  protected def browserErrors(): List[String] = {
-    import java.util.logging.Level
+  /** Tries to get the console logs from the browser and prints them on the
+   *  JSConsole.
+   */
+  final protected def processConsoleLogs(console: JSConsole): Unit =
+    callPop("scalajsPopCapturedConsoleLogs").foreach(console.log)
 
-    val logs = driver.manage().logs().get("browser").iterator()
-    logs.asScala.collect {
-      case log if log.getLevel == Level.SEVERE => log.getMessage
-    }.toList
-  }
+  final protected def browserErrors(): List[String] =
+    callPop("scalajsPopCapturedErrors").map(_.toString).toList
 
-  private def setupConsoleCapture(): Seq[VirtualJSFile] = Seq(
+  private def setupCapture(): Seq[VirtualJSFile] = Seq(
     new MemVirtualJSFile("setupConsoleCapture.js").withContent(
       s"""
         |(function () {
-        |  var console_captured_logs = [];
-        |  var currentLogIndex = 0;
-        |  var oldLog = console.log;
-        |  console.log = function (msg) {
-        |    console_captured_logs.push(msg);
-        |    oldLog.apply(console, arguments);
-        |  };
-        |  var oldErr = console.error;
-        |  console.error = function (msg) {
-        |    console_captured_logs.push(msg);
-        |    oldErr.apply(console, arguments);
-        |  };
-        |  this.scalajsPopCapturedConsoleLogs = function () {
-        |    if (console_captured_logs.length == 0) {
-        |      return console_captured_logs;
-        |    } else {
-        |      var log = [];
-        |      while (currentLogIndex < console_captured_logs.length &&
-        |          log.length < 1024) {
-        |        log.push(String(console_captured_logs[currentLogIndex]));
-        |        currentLogIndex++;
-        |      }
-        |      if (console_captured_logs.length == currentLogIndex) {
-        |        console_captured_logs = [];
-        |        currentLogIndex = 0;
-        |      }
-        |      return log;
+        |  var captured_logs = [];
+        |  var captured_errors = [];
+        |
+        |  function captureConsole(fun) {
+        |    if (!fun) return fun;
+        |    return function(msg) {
+        |      captured_logs.push(msg);
+        |      return fun.apply(console, arguments);
         |    }
+        |  }
+        |
+        |  console.log = captureConsole(console.log);
+        |  console.error = captureConsole(console.error);
+        |
+        |  window.addEventListener('error', function(msg) {
+        |    captured_errors.push(String(msg));
+        |  });
+        |
+        |  this.scalajsPopCapturedConsoleLogs = function() {
+        |    var logs = captured_logs;
+        |    captured_logs = [];
+        |    return logs;
+        |  };
+        |
+        |  this.scalajsPopCapturedErrors = function() {
+        |    var errors = captured_errors;
+        |    captured_errors = [];
+        |    return errors;
         |  };
         |})();
       """.stripMargin

@@ -2,6 +2,7 @@ import sbt.Keys._
 
 import org.scalajs.sbtplugin.ScalaJSCrossVersion
 
+import org.openqa.selenium.Capabilities
 import org.openqa.selenium.remote.DesiredCapabilities
 
 import org.scalajs.jsenv.selenium.SeleniumJSEnv
@@ -29,7 +30,8 @@ val commonSettings: Seq[Setting[_]] = Seq(
   scmInfo := Some(ScmInfo(
       url("https://github.com/scala-js/scala-js-env-selenium"),
       "scm:git:git@github.com:scala-js/scala-js-env-selenium.git",
-      Some("scm:git:git@github.com:scala-js/scala-js-env-selenium.git")))
+      Some("scm:git:git@github.com:scala-js/scala-js-env-selenium.git"))),
+  testOptions += Tests.Argument(TestFramework("com.novocode.junit.JUnitFramework"), "-v", "-a")
 ) ++ mimaDefaultSettings
 
 val previousArtifactSetting: Setting[_] = {
@@ -60,11 +62,12 @@ val previousArtifactSetting: Setting[_] = {
   }
 }
 
-val baseTestSettings: Seq[Setting[_]] = commonSettings ++ Seq(
-  testOptions += Tests.Argument(TestFramework("com.novocode.junit.JUnitFramework"), "-v", "-a")
-)
+val jsEnvCapabilities = settingKey[org.openqa.selenium.Capabilities](
+    "Capabilities of the SeleniumJSEnv")
 
-val testSettings: Seq[Setting[_]] = baseTestSettings ++ Seq(
+val testSettings: Seq[Setting[_]] = commonSettings ++ Seq(
+  jsEnvCapabilities := DesiredCapabilities.firefox(),
+  jsEnv := new SeleniumJSEnv(jsEnvCapabilities.value),
   jsDependencies ++= Seq(
       RuntimeDOM % "test",
       "org.webjars" % "jquery" % "1.10.2" / "jquery.js"
@@ -76,12 +79,11 @@ name := "root"
 
 lazy val seleniumJSEnv: Project = project.
   settings(commonSettings).
-  settings(baseTestSettings).
   settings(
     name := "scalajs-env-selenium",
 
     libraryDependencies ++= Seq(
-        /* Make sure selenium is before scalajs-envs:
+        /* Make sure selenium is before scalajs-envs-test-kit:
          * It pulls in "closure-compiler-java-6" which in turn bundles some old
          * guava stuff which in turn makes selenium fail.
          */
@@ -130,8 +132,7 @@ lazy val seleniumJSEnv: Project = project.
 lazy val seleniumJSEnvTest: Project = project.
   enablePlugins(ScalaJSPlugin).
   enablePlugins(ScalaJSJUnitPlugin).
-  settings(testSettings).
-  settings(jsEnv := new SeleniumJSEnv(DesiredCapabilities.firefox()))
+  settings(testSettings)
 
 lazy val seleniumJSHttpEnvTest: Project = project.
   enablePlugins(ScalaJSPlugin).
@@ -140,7 +141,7 @@ lazy val seleniumJSHttpEnvTest: Project = project.
   settings(
     jsEnv := {
       new SeleniumJSEnv(
-          DesiredCapabilities.firefox(),
+          jsEnvCapabilities.value,
           SeleniumJSEnv.Config()
             .withMaterializer(new CustomFileMaterializer("tmp", "http://localhost:8080/tmp"))
       )

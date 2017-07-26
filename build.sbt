@@ -123,6 +123,7 @@ lazy val seleniumJSEnv: Project = project.
     ),
     pomIncludeRepository := { _ => false },
 
+    // The chrome driver seems to not deal with parallelism very well (#47).
     parallelExecution in Test := false
   )
 

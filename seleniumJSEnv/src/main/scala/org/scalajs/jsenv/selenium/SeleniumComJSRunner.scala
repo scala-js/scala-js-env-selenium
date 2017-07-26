@@ -6,8 +6,8 @@ import org.scalajs.jsenv.{ComJSEnv, ComJSRunner}
 import java.util.concurrent.TimeoutException
 
 import scala.annotation.tailrec
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future, Promise}
+import scala.concurrent.duration._
 import scala.util.Try
 
 private[selenium] class SeleniumComJSRunner(
@@ -22,10 +22,15 @@ private[selenium] class SeleniumComJSRunner(
 
   private var comClosed = false
 
+  private[this] val promise = Promise[Unit]()
+
+  // The com runner only terminates once it is closed.
+  override def future: Future[Unit] = promise.future
+
   def send(msg: String): Unit = {
     if (comClosed)
       throw new ComJSEnv.ComClosedException
-    awaitForBrowser()
+    awaitBrowser()
     val encodedMsg =
       msg.replace("&", "&&").replace("\u0000", "&0")
     val code =
@@ -37,8 +42,18 @@ private[selenium] class SeleniumComJSRunner(
   def receive(timeout: Duration): String = {
     if (comClosed)
       throw new ComJSEnv.ComClosedException
-    awaitForBrowser(timeout)
+
+    val deadline = timeout match {
+      case timeout: FiniteDuration => Some(timeout.fromNow)
+      case _                       => None
+    }
+
+    awaitBrowser(timeout)
+
     @tailrec def loop(): String = {
+      if (deadline.exists(_.isOverdue()))
+        throw new TimeoutException
+
       val code = "return this.scalajsSeleniumComJSRunnerChannel.popOutMsg();"
       driver.executeScript(code) match {
         case null =>
@@ -51,6 +66,7 @@ private[selenium] class SeleniumComJSRunner(
             "&[0&]".r.replaceAllIn(taglessMsg, regMatch =>
                 if (regMatch.group(0) == "&&") "&" else "\u0000")
           } else if (msg == CLOSE_TAG) {
+            comClosed = true
             throw new ComJSEnv.ComClosedException("Closed from browser.")
           } else {
             illFormattedScriptResult(msg)
@@ -67,19 +83,24 @@ private[selenium] class SeleniumComJSRunner(
   }
 
   override def stop(): Unit = synchronized {
-    close()
-    super.stop()
-  }
-
-  override def close(): Unit = synchronized {
     processConsoleLogs(console)
     comClosed = true
+    /* Someone (yes, me) was trying to be smart and call close from stop in
+     * ComJSRunner. So this recursively calls itself if we don't select the
+     * parent class explicitly.
+     */
+    super[SeleniumAsyncJSRunner].stop()
+
+    // Only try, stop may be called multiple times.
+    promise.trySuccess(())
   }
+
+  def close(): Unit = stop()
 
   override protected def initFiles(): Seq[VirtualJSFile] =
     super.initFiles() :+ comSetupFile()
 
-  protected def comSetupFile(): VirtualJSFile = {
+  private def comSetupFile(): VirtualJSFile = {
     val code = {
       s"""
          |(function() {
@@ -131,8 +152,6 @@ private[selenium] class SeleniumComJSRunner(
     new MemVirtualJSFile("comSetup.js").withContent(code)
   }
 
-  protected def awaitForBrowser(timeout: Duration = Duration.Inf): Unit = {
-    if (!Await.ready(future, timeout).isCompleted)
-      throw new TimeoutException()
-  }
+  private def awaitBrowser(timeout: Duration = Duration.Inf): Unit =
+    Await.result(initFuture, timeout)
 }

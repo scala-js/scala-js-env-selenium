@@ -1,21 +1,14 @@
-package org.scalajs.jsenv.selenium.chrome
+package org.scalajs.jsenv.selenium
 
 import org.openqa.selenium.remote.DesiredCapabilities
-
-import org.scalajs.jsenv.selenium.SeleniumJSEnv
 import org.scalajs.jsenv.test._
-
 import org.junit._
 
-class SeleniumJSEnvChromeTest extends TimeoutComTests {
-  protected def newJSEnv: SeleniumJSEnv =
-    new SeleniumJSEnv(DesiredCapabilities.chrome())
-
-  @Ignore("Stop does not work properly, issue #54.")
-  @Test override def stopTestCom: Unit = super.stopTestCom
-
-  @Ignore("Stop does not work properly, issue #54.")
-  @Test override def futureStopTest: Unit = super.futureStopTest
+abstract class SeleniumJSEnvTest extends TimeoutComTests {
+  /* We need to ignore the timeout tests, since we are not able to implement
+   * "smart termination". In fact, this requirement is going to be dropped in
+   * JSEnvs because in general, JS VMs do not support it (see #55).
+   */
 
   @Ignore("Not waiting for event loop to finish, issue #55.")
   @Test
@@ -36,8 +29,14 @@ class SeleniumJSEnvChromeTest extends TimeoutComTests {
   @Ignore("Not waiting for event loop to finish, issue #55.")
   @Test
   override def intervalTest: Unit = super.intervalTest
+}
 
-  @Ignore("Not waiting for event loop to finish, issue #55.")
-  @Test
-  override def receiveTimeoutTest: Unit = super.receiveTimeoutTest
+class SeleniumJSEnvChromeTest extends SeleniumJSEnvTest {
+  protected def newJSEnv: SeleniumJSEnv =
+    new SeleniumJSEnv(DesiredCapabilities.chrome())
+}
+
+class SeleniumJSEnvFirefoxTest extends SeleniumJSEnvTest {
+  protected def newJSEnv: SeleniumJSEnv =
+    new SeleniumJSEnv(DesiredCapabilities.firefox())
 }

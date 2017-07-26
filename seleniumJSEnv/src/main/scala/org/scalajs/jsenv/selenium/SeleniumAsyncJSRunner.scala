@@ -16,13 +16,14 @@ private[selenium] class SeleniumAsyncJSRunner(
     extends AbstractSeleniumJSRunner(factory, libs, code, config)
     with AsyncJSRunner {
 
-  private[this] var promise = Promise[Unit]()
+  private[this] val promise = Promise[Unit]()
 
-  def future: Future[Unit] = promise.future
+  protected def initFuture: Future[Unit] = promise.future
+
+  def future: Future[Unit] = initFuture
 
   def start(logger: Logger, console: JSConsole): Future[Unit] = synchronized {
     startInternal(logger, console)
-    promise = Promise[Unit]()
     (new SeleniumAsyncJSRunnerThread).start()
     future
   }

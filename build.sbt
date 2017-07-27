@@ -1,25 +1,27 @@
 import sbt.Keys._
 
-import  org.scalajs.sbtplugin.ScalaJSCrossVersion
+import org.scalajs.sbtplugin.ScalaJSCrossVersion
+
+import org.openqa.selenium.Capabilities
+import org.openqa.selenium.remote.DesiredCapabilities
 
 import org.scalajs.jsenv.selenium.SeleniumJSEnv
-import org.scalajs.jsenv.selenium.Firefox
 import org.scalajs.jsenv.selenium.CustomFileMaterializer
 
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFilters}
 
-val previousVersion = "0.1.3"
+val previousVersion = None
 
 val scalaVersionsUsedForPublishing: Set[String] =
-  Set("2.10.6", "2.11.8", "2.12.0-M4")
+  Set("2.10.6", "2.11.11", "2.12.2")
 val newScalaBinaryVersionsInThisRelease: Set[String] =
-  Set()
+  Set("2.12")
 
 val commonSettings: Seq[Setting[_]] = Seq(
-  version := "0.1.4-SNAPSHOT",
+  version := "0.2.0-SNAPSHOT",
   organization := "org.scala-js",
-  scalaVersion := "2.11.8",
+  scalaVersion := "2.11.11",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),
 
   homepage := Some(url("http://scala-js.org/")),
@@ -28,7 +30,8 @@ val commonSettings: Seq[Setting[_]] = Seq(
   scmInfo := Some(ScmInfo(
       url("https://github.com/scala-js/scala-js-env-selenium"),
       "scm:git:git@github.com:scala-js/scala-js-env-selenium.git",
-      Some("scm:git:git@github.com:scala-js/scala-js-env-selenium.git")))
+      Some("scm:git:git@github.com:scala-js/scala-js-env-selenium.git"))),
+  testOptions += Tests.Argument(TestFramework("com.novocode.junit.JUnitFramework"), "-v", "-a")
 ) ++ mimaDefaultSettings
 
 val previousArtifactSetting: Setting[_] = {
@@ -42,26 +45,29 @@ val previousArtifactSetting: Setting[_] = {
       // New in this release, no binary compatibility to comply to
       None
     } else {
-      val thisProjectID = projectID.value
-      /* Filter out e:info.apiURL as it expects 0.6.7-SNAPSHOT, whereas the
-       * artifact we're looking for has 0.6.6 (for example).
-       */
-      val prevExtraAttributes =
-        thisProjectID.extraAttributes.filterKeys(_ != "e:info.apiURL")
-      val prevProjectID =
-        (thisProjectID.organization % thisProjectID.name % previousVersion)
-            .cross(thisProjectID.crossVersion)
-            .extra(prevExtraAttributes.toSeq: _*)
-      Some(CrossVersion(scalaV, scalaBinaryV)(prevProjectID).cross(CrossVersion.Disabled))
+      previousVersion.map { pv =>
+        val thisProjectID = projectID.value
+        /* Filter out e:info.apiURL as it expects 0.6.7-SNAPSHOT, whereas the
+         * artifact we're looking for has 0.6.6 (for example).
+         */
+        val prevExtraAttributes =
+          thisProjectID.extraAttributes.filterKeys(_ != "e:info.apiURL")
+        val prevProjectID =
+          (thisProjectID.organization % thisProjectID.name % pv)
+              .cross(thisProjectID.crossVersion)
+              .extra(prevExtraAttributes.toSeq: _*)
+        CrossVersion(scalaV, scalaBinaryV)(prevProjectID).cross(CrossVersion.Disabled)
+      }
     }
   }
 }
 
-val baseTestSettings: Seq[Setting[_]] = commonSettings ++ Seq(
-  testOptions += Tests.Argument(TestFramework("com.novocode.junit.JUnitFramework"), "-v", "-a")
-)
+val jsEnvCapabilities = settingKey[org.openqa.selenium.Capabilities](
+    "Capabilities of the SeleniumJSEnv")
 
-val testSettings: Seq[Setting[_]] = baseTestSettings ++ Seq(
+val testSettings: Seq[Setting[_]] = commonSettings ++ Seq(
+  jsEnvCapabilities := DesiredCapabilities.firefox(),
+  jsEnv := new SeleniumJSEnv(jsEnvCapabilities.value),
   jsDependencies ++= Seq(
       RuntimeDOM % "test",
       "org.webjars" % "jquery" % "1.10.2" / "jquery.js"
@@ -77,9 +83,14 @@ lazy val seleniumJSEnv: Project = project.
     name := "scalajs-env-selenium",
 
     libraryDependencies ++= Seq(
-        "org.scala-js" %% "scalajs-js-envs" % "0.6.9",
-        "org.seleniumhq.selenium" % "selenium-java" % "2.53.0",
-        "org.seleniumhq.selenium" % "selenium-chrome-driver" % "2.53.0"
+        /* Make sure selenium is before scalajs-envs-test-kit:
+         * It pulls in "closure-compiler-java-6" which in turn bundles some old
+         * guava stuff which in turn makes selenium fail.
+         */
+        "org.seleniumhq.selenium" % "selenium-server" % "3.4.0",
+        "org.scala-js" %% "scalajs-js-envs" % scalaJSVersion,
+        "org.scala-js" %% "scalajs-js-envs-test-kit" % scalaJSVersion % "test",
+        "com.novocode" % "junit-interface" % "0.11" % "test"
     ),
 
     previousArtifactSetting,
@@ -112,34 +123,27 @@ lazy val seleniumJSEnv: Project = project.
         </developer>
       </developers>
     ),
-    pomIncludeRepository := { _ => false }
-  )
+    pomIncludeRepository := { _ => false },
 
-lazy val seleniumJSEnvKitTest: Project = project.
-  settings(baseTestSettings).
-  settings(
-    parallelExecution in Test := false,
-    libraryDependencies ++= Seq(
-        "org.scala-js" %% "scalajs-js-envs-test-kit" % "0.6.9" % "test",
-        "com.novocode" % "junit-interface" % "0.11" % "test"
-    )
-  ).dependsOn(seleniumJSEnv % "test")
+    // The chrome driver seems to not deal with parallelism very well (#47).
+    parallelExecution in Test := false
+  )
 
 lazy val seleniumJSEnvTest: Project = project.
   enablePlugins(ScalaJSPlugin).
   enablePlugins(ScalaJSJUnitPlugin).
-  settings(testSettings).
-  settings(
-    libraryDependencies +=
-      "org.scala-js" %% "scalajs-js-envs-test-kit" % "0.6.9",
-    jsEnv := new SeleniumJSEnv(Firefox())
-  )
+  settings(testSettings)
 
 lazy val seleniumJSHttpEnvTest: Project = project.
   enablePlugins(ScalaJSPlugin).
   enablePlugins(ScalaJSJUnitPlugin).
   settings(testSettings).
   settings(
-    jsEnv := new SeleniumJSEnv(Firefox()).
-      withMaterializer(new CustomFileMaterializer("tmp", "http://localhost:8080/tmp"))
+    jsEnv := {
+      new SeleniumJSEnv(
+          jsEnvCapabilities.value,
+          SeleniumJSEnv.Config()
+            .withMaterializer(new CustomFileMaterializer("tmp", "http://localhost:8080/tmp"))
+      )
+    }
   )

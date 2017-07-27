@@ -5,26 +5,19 @@ import org.scalajs.core.tools.jsdep.ResolvedJSDependency
 import org.scalajs.core.tools.logging.Logger
 import org.scalajs.jsenv.{JSConsole, JSRunner}
 
-class SeleniumRunner(browserProvider: SeleniumBrowser,
-    libs: Seq[ResolvedJSDependency], code: VirtualJSFile, keepAlive: Boolean, materializer: FileMaterializer)
-    extends AbstractSeleniumJSRunner(browserProvider, libs, code, materializer) with JSRunner {
-
-  @deprecated("Use the overload with an explicit FileMaterializer.", "0.1.2")
-  def this(browserProvider: SeleniumBrowser, libs: Seq[ResolvedJSDependency],
-      code: VirtualJSFile, keepAlive: Boolean) = {
-    this(browserProvider, libs, code, keepAlive, DefaultFileMaterializer)
-  }
+private[selenium] class SeleniumRunner(
+    factory: AbstractSeleniumJSRunner.DriverFactory,
+    libs: Seq[ResolvedJSDependency], code: VirtualJSFile,
+    config: SeleniumJSEnv.Config)
+    extends AbstractSeleniumJSRunner(factory, libs, code, config) with JSRunner {
 
   def run(logger: Logger, console: JSConsole): Unit = {
-    setupLoggerAndConsole(logger, console)
-    browser.start()
+    startInternal(logger, console)
     runAllScripts()
-    val browserErrors = browser.browserErrors()
+    val errs = browserErrors()
+    stop()
 
-    if (!keepAlive || ignoreKeepAlive)
-      browser.close()
-
-    if (browserErrors.nonEmpty) {
+    if (errs.nonEmpty) {
       val msg = ("Errors caught by browser:" :: browserErrors).mkString("\n")
       throw new Exception(msg)
     }

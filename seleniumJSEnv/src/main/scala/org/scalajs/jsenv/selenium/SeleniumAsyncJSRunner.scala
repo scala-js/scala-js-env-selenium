@@ -9,43 +9,32 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
 import scala.util.Try
 
-class SeleniumAsyncJSRunner(browserProvider: SeleniumBrowser,
-    libs: Seq[ResolvedJSDependency], code: VirtualJSFile, keepAlive: Boolean, materializer: FileMaterializer)
-    extends AbstractSeleniumJSRunner(browserProvider, libs, code, materializer)
+private[selenium] class SeleniumAsyncJSRunner(
+    factory: AbstractSeleniumJSRunner.DriverFactory,
+    libs: Seq[ResolvedJSDependency], code: VirtualJSFile,
+    config: SeleniumJSEnv.Config)
+    extends AbstractSeleniumJSRunner(factory, libs, code, config)
     with AsyncJSRunner {
 
-  @deprecated("Use the overload with an explicit FileMaterializer.", "0.1.2")
-  def this(browserProvider: SeleniumBrowser, libs: Seq[ResolvedJSDependency],
-      code: VirtualJSFile, keepAlive: Boolean) = {
-    this(browserProvider, libs, code, keepAlive, DefaultFileMaterializer)
-  }
+  private[this] val promise = Promise[Unit]()
 
-  private[this] var promise = Promise[Unit]()
+  protected def initFuture: Future[Unit] = promise.future
 
-  def future: Future[Unit] = promise.future
+  def future: Future[Unit] = initFuture
 
   def start(logger: Logger, console: JSConsole): Future[Unit] = synchronized {
-    setupLoggerAndConsole(logger, console)
-    promise = Promise[Unit]()
+    startInternal(logger, console)
     (new SeleniumAsyncJSRunnerThread).start()
     future
-  }
-
-  override def stop(): Unit = synchronized {
-    if (browser.isOpened && (!keepAlive || ignoreKeepAlive))
-      Try(browser.close())
   }
 
   private class SeleniumAsyncJSRunnerThread extends Thread {
     override def run(): Unit = {
       // This thread should not be interrupted, so it is safe to use Trys
-      val runnerInit = Try {
-        browser.start()
-        runAllScripts()
-      }
+      val runnerInit = Try(runAllScripts())
 
       if (runnerInit.isFailure)
-        browser.processConsoleLogs(console)
+        processConsoleLogs(console)
 
       promise.complete(runnerInit)
     }

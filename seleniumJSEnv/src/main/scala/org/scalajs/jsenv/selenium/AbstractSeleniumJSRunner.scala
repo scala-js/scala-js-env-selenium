@@ -124,7 +124,7 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
   private def runtimeEnv(): Seq[VirtualJSFile] = Seq(
     new MemVirtualJSFile("scalaJSEnvInfo.js").withContent(
       "var __ScalaJSEnv = __ScalaJSEnv || {};\n" +
-      "__ScalaJSEnv.existFunction = function(status) { window.close(); };"
+      "__ScalaJSEnv.exitFunction = function(status) { window.close(); };"
     )
   )
 

@@ -64,11 +64,45 @@ object SeleniumJSEnv {
   ) {
     private def this() = this(
         keepAlive = false,
-        materializer = DefaultFileMaterializer,
+        materializer = TempDirFileMaterializer,
         driverFactory = Config.defaultFactory)
 
-    def withMaterializer(materializer: FileMaterializer): Config =
-      copy(materializer = materializer)
+    /** Materializes purely virtual files into a temp directory.
+     *
+     *  Materialization is necessary so that virtual files can be referred to by
+     *  name. If you do not know/care how your files are referred to, this is a
+     *  good default choice. It is also the default of [[SeleniumJSEnv.Config]].
+     */
+    def withMaterializeInTemp: Config =
+      copy(materializer = TempDirFileMaterializer)
+
+    /** Materializes files in a static directory of a user configured server.
+     *
+     *  This can be used to bypass cross origin access policies.
+     *
+     *  @param contentDir Static content directory of the server. The files will
+     *      be put here. Will get created if it doesn't exist.
+     *  @param webRoot URL making `contentDir` accessible thorugh the server.
+     *      This must have a trailing slash to be interpreted as a directory.
+     *
+     *  @example
+     *
+     *  The following will make the browser fetch files using the http:// schema
+     *  instead of the file:// schema. The example assumes a local webserver is
+     *  running and serving the ".tmp" directory at http://localhost:8080.
+     *
+     *  {{{
+     *  jsSettings(
+     *    jsEnv := new SeleniumJSEnv(
+     *        org.openqa.selenium.remote.DesiredCapabilities.firefox(),
+     *        SeleniumJSEnv.Config()
+     *          .withMaterializeInServer(".tmp", "http://localhost:8080/")
+     *    )
+     *  )
+     *  }}}
+     */
+    def withMaterializeInServer(contentDir: String, webRoot: String): Config =
+      copy(materializer = new ServerDirFileMaterializer(contentDir, webRoot))
 
     def withKeepAlive(keepAlive: Boolean): Config =
       copy(keepAlive = keepAlive)

@@ -6,7 +6,6 @@ import org.openqa.selenium.Capabilities
 import org.openqa.selenium.remote.DesiredCapabilities
 
 import org.scalajs.jsenv.selenium.SeleniumJSEnv
-import org.scalajs.jsenv.selenium.CustomFileMaterializer
 
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFilters}
@@ -143,7 +142,7 @@ lazy val seleniumJSHttpEnvTest: Project = project.
       new SeleniumJSEnv(
           jsEnvCapabilities.value,
           SeleniumJSEnv.Config()
-            .withMaterializer(new CustomFileMaterializer("tmp", "http://localhost:8080/tmp"))
+            .withMaterializeInServer("tmp", "http://localhost:8080/tmp/")
       )
     }
   )

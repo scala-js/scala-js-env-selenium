@@ -31,11 +31,9 @@ private[selenium] class SeleniumComJSRunner(
     if (comClosed)
       throw new ComJSEnv.ComClosedException
     awaitBrowser()
-    val encodedMsg =
-      msg.replace("&", "&&").replace("\u0000", "&0")
     val code =
       "this.scalajsSeleniumComJSRunnerChannel.recvMessage(arguments[0]);";
-    driver.executeScript(code, encodedMsg);
+    driver.executeScript(code, msg);
     processConsoleLogs(console)
   }
 
@@ -62,9 +60,7 @@ private[selenium] class SeleniumComJSRunner(
         case msg: String =>
           processConsoleLogs(console)
           if (msg.startsWith(MESSAGE_TAG)) {
-            val taglessMsg = msg.substring(MESSAGE_TAG.length)
-            "&[0&]".r.replaceAllIn(taglessMsg, regMatch =>
-                if (regMatch.group(0) == "&&") "&" else "\u0000")
+            msg.substring(MESSAGE_TAG.length)
           } else if (msg == CLOSE_TAG) {
             comClosed = true
             throw new ComJSEnv.ComClosedException("Closed from browser.")
@@ -120,9 +116,7 @@ private[selenium] class SeleniumComJSRunner(
          |      receiveBuf = null;
          |    },
          |    send: function(msg) {
-         |      var encodedMsg =
-         |        msg.split("&").join("&&").split("\0").join("&0");
-         |      sendMsgBuf.push("$MESSAGE_TAG" + encodedMsg);
+         |      sendMsgBuf.push("$MESSAGE_TAG" + msg);
          |    },
          |    close: function() {
          |      sendMsgBuf.push("$CLOSE_TAG");
@@ -132,17 +126,10 @@ private[selenium] class SeleniumComJSRunner(
          |  this.scalajsSeleniumComJSRunnerChannel = {
          |    popOutMsg: function() { return sendMsgBuf.shift(); },
          |    recvMessage: function(msg) {
-         |      var matcher = function (match) {
-         |        if (match == "&&")
-         |          return "&"
-         |        else
-         |          return "\0"
-         |      };
-         |      var decodedMsg = msg.replace(/(&&)|(&0)/g, matcher);
          |      if (onReceive != null) {
-         |        onReceive(decodedMsg);
+         |        onReceive(msg);
          |      } else {
-         |        receiveBuf.push(decodedMsg);
+         |        receiveBuf.push(msg);
          |      }
          |    }
          |  };

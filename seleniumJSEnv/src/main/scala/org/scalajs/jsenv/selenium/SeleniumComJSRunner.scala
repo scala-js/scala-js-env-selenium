@@ -27,7 +27,7 @@ private[selenium] class SeleniumComJSRunner(
   // The com runner only terminates once it is closed.
   override def future: Future[Unit] = promise.future
 
-  def send(msg: String): Unit = {
+  def send(msg: String): Unit = synchronized {
     if (comClosed)
       throw new ComJSEnv.ComClosedException
     awaitBrowser()
@@ -37,10 +37,7 @@ private[selenium] class SeleniumComJSRunner(
     processConsoleLogs(console)
   }
 
-  def receive(timeout: Duration): String = {
-    if (comClosed)
-      throw new ComJSEnv.ComClosedException
-
+  def receive(timeout: Duration): String = synchronized {
     val deadline = timeout match {
       case timeout: FiniteDuration => Some(timeout.fromNow)
       case _                       => None
@@ -49,12 +46,16 @@ private[selenium] class SeleniumComJSRunner(
     awaitBrowser(timeout)
 
     @tailrec def loop(): String = {
+      if (comClosed)
+        throw new ComJSEnv.ComClosedException
+
       if (deadline.exists(_.isOverdue()))
         throw new TimeoutException
 
       val code = "return this.scalajsSeleniumComJSRunnerChannel.popOutMsg();"
       driver.executeScript(code) match {
         case null =>
+          wait(10)
           loop()
 
         case msg: String =>

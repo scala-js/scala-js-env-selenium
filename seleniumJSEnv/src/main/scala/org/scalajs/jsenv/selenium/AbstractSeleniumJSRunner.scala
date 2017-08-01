@@ -69,8 +69,15 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
     val page = htmlPage(jsFiles.map(config.materializer.materialize _))
     val pageURL = config.materializer.materialize(page)
 
-    driver.get(pageURL.toString)
-    processConsoleLogs(console)
+    /* driver needs to be synchronized on.
+     * endRun() might have been called while we were doing the work above.
+     */
+    synchronized {
+      if (driver != null) {
+        driver.get(pageURL.toString)
+        processConsoleLogs(console)
+      }
+    }
   }
 
   private def callPop(cmd: String): Seq[_] = {

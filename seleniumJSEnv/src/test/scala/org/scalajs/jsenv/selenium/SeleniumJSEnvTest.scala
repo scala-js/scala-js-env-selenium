@@ -5,6 +5,16 @@ import org.scalajs.jsenv.test._
 import org.junit._
 
 abstract class SeleniumJSEnvTest extends TimeoutComTests {
+  // Additional tests. Should probably be included upstream.
+
+  @Test // #74
+  def closeAfterStartTest: Unit = {
+    val runner = asyncRunner("")
+    start(runner)
+    runner.stop()
+    runner.await()
+  }
+
   /* We need to ignore the timeout tests, since we are not able to implement
    * "smart termination". In fact, this requirement is going to be dropped in
    * JSEnvs because in general, JS VMs do not support it (see #55).

@@ -6,7 +6,6 @@ import org.scalajs.jsenv.{ComJSEnv, ComJSRunner}
 import java.util.concurrent.TimeoutException
 
 import scala.annotation.tailrec
-import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration._
 import scala.util.Try
 
@@ -21,19 +20,23 @@ private[selenium] class SeleniumComJSRunner(
   private final val CLOSE_TAG = "CLOSE"
 
   private[this] var comClosed = false
-
-  // Promise that completes when initialization is done.
-  private[this] val initPromise = Promise[Unit]()
+  private[this] var initCompleted = false
 
   override protected def asyncStart(): Unit = {
     runAllScripts()
-    initPromise.success(())
+    synchronized {
+      initCompleted = true
+      notifyAll()
+    }
   }
 
   def send(msg: String): Unit = synchronized {
+    while (!initCompleted)
+      wait()
+
     if (comClosed)
       throw new ComJSEnv.ComClosedException
-    awaitBrowser()
+
     val code =
       "this.scalajsSeleniumComJSRunnerChannel.recvMessage(arguments[0]);";
     driver.executeScript(code, msg);
@@ -46,13 +49,19 @@ private[selenium] class SeleniumComJSRunner(
       case _                       => None
     }
 
-    awaitBrowser(timeout)
+    def isOverdue = deadline.exists(_.isOverdue())
+
+    while (!initCompleted && !isOverdue)
+      deadline.fold(wait())(d => wait(d.timeLeft.toMillis))
+
+    if (!initCompleted)
+      throw new TimeoutException
 
     @tailrec def loop(): String = {
       if (comClosed)
         throw new ComJSEnv.ComClosedException
 
-      if (deadline.exists(_.isOverdue()))
+      if (isOverdue)
         throw new TimeoutException
 
       val code = "return this.scalajsSeleniumComJSRunnerChannel.popOutMsg();"
@@ -139,7 +148,4 @@ private[selenium] class SeleniumComJSRunner(
     }
     new MemVirtualJSFile("comSetup.js").withContent(code)
   }
-
-  private def awaitBrowser(timeout: Duration = Duration.Inf): Unit =
-    Await.result(initPromise.future, timeout)
 }

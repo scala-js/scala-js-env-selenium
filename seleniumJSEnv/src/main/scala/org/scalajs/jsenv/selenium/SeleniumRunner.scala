@@ -12,7 +12,7 @@ private[selenium] class SeleniumRunner(
     extends AbstractSeleniumJSRunner(factory, libs, code, config) with JSRunner {
 
   def run(logger: Logger, console: JSConsole): Unit = {
-    setupRun(logger, console)
+    setupRun(console)
     runAllScripts()
     endRun().get
   }

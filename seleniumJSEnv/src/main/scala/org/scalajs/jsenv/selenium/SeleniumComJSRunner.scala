@@ -40,7 +40,7 @@ private[selenium] class SeleniumComJSRunner(
     val code =
       "this.scalajsSeleniumComJSRunnerChannel.recvMessage(arguments[0]);";
     driver.executeScript(code, msg);
-    processConsoleLogs(console)
+    processConsoleLogs()
   }
 
   def receive(timeout: Duration): String = synchronized {
@@ -71,7 +71,7 @@ private[selenium] class SeleniumComJSRunner(
           loop()
 
         case msg: String =>
-          processConsoleLogs(console)
+          processConsoleLogs()
           if (msg.startsWith(MESSAGE_TAG)) {
             msg.substring(MESSAGE_TAG.length)
           } else if (msg == CLOSE_TAG) {
@@ -82,9 +82,6 @@ private[selenium] class SeleniumComJSRunner(
           }
 
         case obj =>
-          // Here we only try to get the console because it uses the same
-          // communication channel that is potentially corrupted.
-          Try(processConsoleLogs(console))
           illFormattedScriptResult(obj)
       }
     }

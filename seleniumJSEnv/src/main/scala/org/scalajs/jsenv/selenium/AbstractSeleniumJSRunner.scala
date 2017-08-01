@@ -2,7 +2,6 @@ package org.scalajs.jsenv.selenium
 
 import org.scalajs.core.tools.io.{MemVirtualJSFile, VirtualJSFile}
 import org.scalajs.core.tools.jsdep.ResolvedJSDependency
-import org.scalajs.core.tools.logging.Logger
 import org.scalajs.jsenv.{JSConsole, VirtualFileMaterializer}
 
 import org.openqa.selenium.{WebDriver, JavascriptExecutor}
@@ -16,24 +15,20 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
     libs: Seq[ResolvedJSDependency], code: VirtualJSFile,
     config: SeleniumJSEnv.Config) {
 
-  private[this] var _logger: Logger = _
-  private[this] var _console: JSConsole = _
+  private[this] var console: JSConsole = _
   private[this] var _driver: WebDriver with JavascriptExecutor = _
 
-  protected def logger: Logger = _logger
-  protected def console: JSConsole = _console
   protected def driver: WebDriver with JavascriptExecutor = _driver
 
-  protected def setupRun(logger: Logger, console: JSConsole): Unit = synchronized {
+  protected def setupRun(console: JSConsole): Unit = synchronized {
     require(_driver == null, "start() may only start one instance at a time.")
-    require(_logger == null && _console == null)
-    _logger = logger
-    _console = console
+    require(this.console == null)
+    this.console = console
     _driver = factory()
   }
 
   protected def endRun(): Try[Unit] = synchronized {
-    processConsoleLogs(console)
+    processConsoleLogs()
 
     val errs = callPop("scalajsPopCapturedErrors").map(_.toString).toList
 
@@ -75,7 +70,7 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
     synchronized {
       if (driver != null) {
         driver.get(pageURL.toString)
-        processConsoleLogs(console)
+        processConsoleLogs()
       }
     }
   }
@@ -99,7 +94,7 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
   /** Tries to get the console logs from the browser and prints them on the
    *  JSConsole.
    */
-  final protected def processConsoleLogs(console: JSConsole): Unit =
+  final protected def processConsoleLogs(): Unit =
     callPop("scalajsPopCapturedConsoleLogs").foreach(console.log)
 
   private def setupCapture(): Seq[VirtualJSFile] = Seq(

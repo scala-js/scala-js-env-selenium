@@ -20,7 +20,7 @@ private[selenium] class SeleniumAsyncJSRunner(
   def future: Future[Unit] = promise.future
 
   def start(logger: Logger, console: JSConsole): Future[Unit] = synchronized {
-    setupRun(logger, console)
+    setupRun(console)
     Future(asyncStart())
     future
   }

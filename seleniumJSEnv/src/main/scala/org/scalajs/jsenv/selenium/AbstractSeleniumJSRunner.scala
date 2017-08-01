@@ -8,6 +8,7 @@ import org.scalajs.jsenv.{JSConsole, VirtualFileMaterializer}
 import org.openqa.selenium.{WebDriver, JavascriptExecutor}
 
 import scala.annotation.tailrec
+import scala.util._
 import scala.collection.JavaConverters._
 
 private[selenium] abstract class AbstractSeleniumJSRunner(
@@ -23,7 +24,7 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
   protected def console: JSConsole = _console
   protected def driver: WebDriver with JavascriptExecutor = _driver
 
-  protected def startInternal(logger: Logger, console: JSConsole): Unit = synchronized {
+  protected def setupRun(logger: Logger, console: JSConsole): Unit = synchronized {
     require(_driver == null, "start() may only start one instance at a time.")
     require(_logger == null && _console == null)
     _logger = logger
@@ -31,7 +32,22 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
     _driver = factory()
   }
 
-  def stop(): Unit = synchronized {
+  protected def endRun(): Try[Unit] = synchronized {
+    processConsoleLogs(console)
+
+    val errs = callPop("scalajsPopCapturedErrors").map(_.toString).toList
+
+    cleanupDriver()
+
+    if (errs.nonEmpty) {
+      val msg = ("Errors caught by browser:" :: errs).mkString("\n")
+      Failure(throw new Exception(msg))
+    } else {
+      Success(())
+    }
+  }
+
+  private def cleanupDriver(): Unit = {
     if ((!config.keepAlive || ignoreKeepAlive) && _driver != null) {
       _driver.close()
       _driver = null
@@ -78,9 +94,6 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
    */
   final protected def processConsoleLogs(console: JSConsole): Unit =
     callPop("scalajsPopCapturedConsoleLogs").foreach(console.log)
-
-  final protected def browserErrors(): List[String] =
-    callPop("scalajsPopCapturedErrors").map(_.toString).toList
 
   private def setupCapture(): Seq[VirtualJSFile] = Seq(
     new MemVirtualJSFile("setupConsoleCapture.js").withContent(
@@ -149,7 +162,7 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
   }
 
   protected override def finalize(): Unit = {
-    stop()
+    cleanupDriver()
     super.finalize()
   }
 }

@@ -79,7 +79,6 @@ class KeepAliveTest {
   }
 
   @Test
-  @Ignore("Async doesn't close - #73")
   def asyncRunClosesWithoutKeepAlive: Unit = {
     val driver = new MockWebDriver()
     runAsync(newEnv(driver, keepAlive = false))

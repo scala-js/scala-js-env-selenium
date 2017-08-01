@@ -7,7 +7,6 @@ import org.scalajs.jsenv.{JSConsole, AsyncJSRunner}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
-import scala.util.Try
 
 private[selenium] class SeleniumAsyncJSRunner(
     factory: AbstractSeleniumJSRunner.DriverFactory,
@@ -18,25 +17,23 @@ private[selenium] class SeleniumAsyncJSRunner(
 
   private[this] val promise = Promise[Unit]()
 
-  protected def initFuture: Future[Unit] = promise.future
-
-  def future: Future[Unit] = initFuture
+  def future: Future[Unit] = promise.future
 
   def start(logger: Logger, console: JSConsole): Future[Unit] = synchronized {
-    startInternal(logger, console)
-    (new SeleniumAsyncJSRunnerThread).start()
+    setupRun(logger, console)
+    Future(asyncStart())
     future
   }
 
-  private class SeleniumAsyncJSRunnerThread extends Thread {
-    override def run(): Unit = {
-      // This thread should not be interrupted, so it is safe to use Trys
-      val runnerInit = Try(runAllScripts())
-
-      if (runnerInit.isFailure)
-        processConsoleLogs(console)
-
-      promise.complete(runnerInit)
+  def stop(): Unit = synchronized {
+    // Make sure stop is idempotent.
+    if (!promise.isCompleted) {
+      promise.complete(endRun())
     }
+  }
+
+  protected def asyncStart(): Unit = {
+    try runAllScripts()
+    finally stop()
   }
 }

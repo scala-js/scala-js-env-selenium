@@ -20,12 +20,15 @@ private[selenium] class SeleniumComJSRunner(
   private final val MESSAGE_TAG = "M"
   private final val CLOSE_TAG = "CLOSE"
 
-  private var comClosed = false
+  private[this] var comClosed = false
 
-  private[this] val promise = Promise[Unit]()
+  // Promise that completes when initialization is done.
+  private[this] val initPromise = Promise[Unit]()
 
-  // The com runner only terminates once it is closed.
-  override def future: Future[Unit] = promise.future
+  override protected def asyncStart(): Unit = {
+    runAllScripts()
+    initPromise.success(())
+  }
 
   def send(msg: String): Unit = synchronized {
     if (comClosed)
@@ -80,16 +83,13 @@ private[selenium] class SeleniumComJSRunner(
   }
 
   override def stop(): Unit = synchronized {
-    processConsoleLogs(console)
     comClosed = true
+
     /* Someone (yes, me) was trying to be smart and call close from stop in
      * ComJSRunner. So this recursively calls itself if we don't select the
      * parent class explicitly.
      */
     super[SeleniumAsyncJSRunner].stop()
-
-    // Only try, stop may be called multiple times.
-    promise.trySuccess(())
   }
 
   def close(): Unit = stop()
@@ -141,5 +141,5 @@ private[selenium] class SeleniumComJSRunner(
   }
 
   private def awaitBrowser(timeout: Duration = Duration.Inf): Unit =
-    Await.result(initFuture, timeout)
+    Await.result(initPromise.future, timeout)
 }

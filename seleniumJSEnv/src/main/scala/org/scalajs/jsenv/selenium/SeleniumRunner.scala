@@ -12,14 +12,8 @@ private[selenium] class SeleniumRunner(
     extends AbstractSeleniumJSRunner(factory, libs, code, config) with JSRunner {
 
   def run(logger: Logger, console: JSConsole): Unit = {
-    startInternal(logger, console)
+    setupRun(console)
     runAllScripts()
-    val errs = browserErrors()
-    stop()
-
-    if (errs.nonEmpty) {
-      val msg = ("Errors caught by browser:" :: browserErrors).mkString("\n")
-      throw new Exception(msg)
-    }
+    endRun().get
   }
 }

@@ -2,12 +2,12 @@ package org.scalajs.jsenv.selenium
 
 import org.scalajs.core.tools.io.{MemVirtualJSFile, VirtualJSFile}
 import org.scalajs.core.tools.jsdep.ResolvedJSDependency
-import org.scalajs.core.tools.logging.Logger
 import org.scalajs.jsenv.{JSConsole, VirtualFileMaterializer}
 
 import org.openqa.selenium.{WebDriver, JavascriptExecutor}
 
 import scala.annotation.tailrec
+import scala.util._
 import scala.collection.JavaConverters._
 
 private[selenium] abstract class AbstractSeleniumJSRunner(
@@ -15,23 +15,34 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
     libs: Seq[ResolvedJSDependency], code: VirtualJSFile,
     config: SeleniumJSEnv.Config) {
 
-  private[this] var _logger: Logger = _
-  private[this] var _console: JSConsole = _
+  private[this] var console: JSConsole = _
   private[this] var _driver: WebDriver with JavascriptExecutor = _
 
-  protected def logger: Logger = _logger
-  protected def console: JSConsole = _console
   protected def driver: WebDriver with JavascriptExecutor = _driver
 
-  protected def startInternal(logger: Logger, console: JSConsole): Unit = synchronized {
+  protected def setupRun(console: JSConsole): Unit = synchronized {
     require(_driver == null, "start() may only start one instance at a time.")
-    require(_logger == null && _console == null)
-    _logger = logger
-    _console = console
+    require(this.console == null)
+    this.console = console
     _driver = factory()
   }
 
-  def stop(): Unit = synchronized {
+  protected def endRun(): Try[Unit] = synchronized {
+    processConsoleLogs()
+
+    val errs = callPop("scalajsPopCapturedErrors").map(_.toString).toList
+
+    cleanupDriver()
+
+    if (errs.nonEmpty) {
+      val msg = ("Errors caught by browser:" :: errs).mkString("\n")
+      Failure(throw new Exception(msg))
+    } else {
+      Success(())
+    }
+  }
+
+  private def cleanupDriver(): Unit = {
     if ((!config.keepAlive || ignoreKeepAlive) && _driver != null) {
       _driver.close()
       _driver = null
@@ -53,8 +64,15 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
     val page = htmlPage(jsFiles.map(config.materializer.materialize _))
     val pageURL = config.materializer.materialize(page)
 
-    driver.get(pageURL.toString)
-    processConsoleLogs(console)
+    /* driver needs to be synchronized on.
+     * endRun() might have been called while we were doing the work above.
+     */
+    synchronized {
+      if (driver != null) {
+        driver.get(pageURL.toString)
+        processConsoleLogs()
+      }
+    }
   }
 
   private def callPop(cmd: String): Seq[_] = {
@@ -76,11 +94,8 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
   /** Tries to get the console logs from the browser and prints them on the
    *  JSConsole.
    */
-  final protected def processConsoleLogs(console: JSConsole): Unit =
+  final protected def processConsoleLogs(): Unit =
     callPop("scalajsPopCapturedConsoleLogs").foreach(console.log)
-
-  final protected def browserErrors(): List[String] =
-    callPop("scalajsPopCapturedErrors").map(_.toString).toList
 
   private def setupCapture(): Seq[VirtualJSFile] = Seq(
     new MemVirtualJSFile("setupConsoleCapture.js").withContent(
@@ -149,7 +164,7 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
   }
 
   protected override def finalize(): Unit = {
-    stop()
+    cleanupDriver()
     super.finalize()
   }
 }

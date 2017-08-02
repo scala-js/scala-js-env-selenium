@@ -1,22 +1,34 @@
 # scalajs-env-selenium
 
-[![Scala.js](https://www.scala-js.org/assets/badges/scalajs-0.6.8.svg)](https://www.scala-js.org/)
+[![Scala.js](https://www.scala-js.org/assets/badges/scalajs-0.6.17.svg)](https://www.scala-js.org/)
 
 ## Usage
 Simply add the following line to your `project/plugins.sbt`:
 ```scala
-libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "0.1.3"
+libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "0.2.0"
 ```
 and the following line to your sbt settings:
 ```scala
 // Apply to the 'run' command
-jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(BROWSER)
+jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(capabilities)
 
 // Apply to tests
-jsEnv in Test := new org.scalajs.jsenv.selenium.SeleniumJSEnv(BROWSER)
+jsEnv in Test := new org.scalajs.jsenv.selenium.SeleniumJSEnv(capabilities)
 ```
-where the `BROWSER` can be either `org.scalajs.jsenv.selenium.Firefox()` or
-`org.scalajs.jsenv.selenium.Chrome()`.
+where `capabilities` is one of the members of
+[`org.openqa.selenium.remote.DesiredCapabilities`](
+https://seleniumhq.github.io/selenium/docs/api/java/org/openqa/selenium/remote/DesiredCapabilities.html).
+
+For example for Firefox:
+
+```scala
+jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(
+    org.openqa.selenium.remote.DesiredCapabilities.firefox())
+```
+
+You are responsible for installing the [drivers](
+http://docs.seleniumhq.org/download/#thirdPartyDrivers) needed for the browsers
+you request.
 
 When executing the program with `run` a new browser window will be created,
 the code will be executed in it and finally the browser will close itself.
@@ -25,7 +37,12 @@ several browser windows and close them all before the end of the tests.
 
 ### In browser debugging
 If you wish to keep the browser window opened after the execution has terminated simply
-add the option `withKeepAlive` on the environment (`new SeleniumJSEnv(BROWSER).withKeepAlive()`).
+add the option `withKeepAlive` on the environment:
+
+``` scala
+new SeleniumJSEnv(capabilities, SeleniumJSEnv.Config().withKeepAlive(true))
+```
+
 It is recommend to use this with a `run` and not `test` because the latter tends
 to leave too many browser windows open.
 
@@ -33,11 +50,6 @@ to leave too many browser windows open.
 By default tests are executed in their own window for parallelism.
 When debugging tests with `withKeepAlive` it is possible to disable this option
 using the `sbt` setting `parallelExecution in Test := false`.
-
-### Additional requirements for Google Chrome
-Selenium requires an additional driver to connect to Google Chrome.
-This driver can be found at https://sites.google.com/a/chromium.org/chromedriver/.
-You will also need to make sure the driver location is in the systems `PATH` variable.
 
 ### Headless Usage
 It is often desirable to run Selenium headlessly.

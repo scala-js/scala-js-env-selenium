@@ -15,6 +15,24 @@ abstract class SeleniumJSEnvTest extends TimeoutComTests {
     runner.await()
   }
 
+  @Test // #79
+  def throwExceptionTest: Unit = {
+    """
+    throw 1;
+    """.fails()
+  }
+
+  @Test // #79
+  def catchExceptionTest: Unit = {
+    """
+    try {
+      throw "hello world";
+    } catch (e) {
+      console.log(e);
+    }
+    """ hasOutput "hello world\n"
+  }
+
   /* We need to ignore the timeout tests, since we are not able to implement
    * "smart termination". In fact, this requirement is going to be dropped in
    * JSEnvs because in general, JS VMs do not support it (see #55).

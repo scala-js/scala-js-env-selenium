@@ -10,15 +10,15 @@ import org.scalajs.jsenv.selenium.SeleniumJSEnv
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFilters}
 
-val previousVersion = None
+val previousVersion = Some("0.2.0")
 
 val scalaVersionsUsedForPublishing: Set[String] =
   Set("2.10.6", "2.11.11", "2.12.2")
 val newScalaBinaryVersionsInThisRelease: Set[String] =
-  Set("2.12")
+  Set()
 
 val commonSettings: Seq[Setting[_]] = Seq(
-  version := "0.2.0",
+  version := "0.2.1-SNAPSHOT",
   organization := "org.scala-js",
   scalaVersion := "2.11.11",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),

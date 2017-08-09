@@ -13,7 +13,7 @@ matrix:
     - scala: 2.12.2
       jdk: oraclejdk7
 addons:
-  firefox: latest
+  firefox: "54.0.1"
   chrome: stable
 before_install:
   # Initilize xvfb

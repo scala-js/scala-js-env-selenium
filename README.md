@@ -3,7 +3,7 @@
 [![Scala.js](https://www.scala-js.org/assets/badges/scalajs-0.6.17.svg)](https://www.scala-js.org/)
 
 ## Usage
-Simply add the following line to your `project/plugins.sbt`:
+Simply add the following line to your `project/plugins.sbt` (note that this line must be placed before `addSbtPlugin("org.scala-js" % "sbt-scalajs" % <scalajs-version>)`; otherwise you may get errors such as `java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkState` when you run tests):
 ```scala
 libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "0.2.0"
 ```

@@ -1,5 +1,12 @@
 package org.scalajs.jsenv.selenium
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+import scala.collection.JavaConverters._
+
+import java.net.URL
+
 import org.openqa.selenium._
 import org.openqa.selenium.remote.DesiredCapabilities
 import org.openqa.selenium.remote.server._
@@ -8,19 +15,26 @@ import org.junit._
 import org.junit.Assert._
 
 import org.scalajs.jsenv._
-import org.scalajs.core.tools.io.MemVirtualJSFile
-import org.scalajs.core.tools.logging.NullLogger
 
 class KeepAliveTest {
-  class MockWebDriver extends WebDriver with JavascriptExecutor {
+  private final class MockWebDriver extends WebDriver with JavascriptExecutor {
     var closed = false
 
     def close(): Unit = closed = true
     def quit(): Unit = closed = true
 
-    def executeScript(code: String, args: Object*): Object = null
+    def executeScript(code: String, args: Object*): Object =
+      Map.empty[String, String].asJava
 
     def get(url: String): Unit = ()
+
+    def navigate(): WebDriver.Navigation = new WebDriver.Navigation {
+      def back(): Unit = ()
+      def forward(): Unit = ()
+      def refresh(): Unit = ()
+      def to(url: String): Unit = ()
+      def to(url: URL): Unit = ()
+    }
 
     // Stuff we won't need.
 
@@ -33,7 +47,6 @@ class KeepAliveTest {
     def getWindowHandle(): String = ???
     def getWindowHandles(): java.util.Set[String] = ???
     def manage(): WebDriver.Options = ???
-    def navigate(): WebDriver.Navigation = ???
 
     def getCurrentUrl(): String = ???
     def getPageSource(): String = ???
@@ -41,68 +54,71 @@ class KeepAliveTest {
     def switchTo(): WebDriver.TargetLocator = ???
   }
 
-  private def newEnv(driver: WebDriver, keepAlive: Boolean): SeleniumJSEnv = {
-    DriverInjector.inject(driver,
-        SeleniumJSEnv.Config().withKeepAlive(keepAlive))
+  private final class MockInjector(driver: WebDriver) extends DriverFactory {
+    var used = false
+
+    def newInstance(caps: Capabilities): WebDriver = {
+      require(!used)
+      used = true
+      driver
+    }
+
+    def hasMappingFor(caps: Capabilities): Boolean = true
+    def registerDriverProvider(p: DriverProvider): Unit = ???
   }
 
-  private def runSync(env: SeleniumJSEnv): Unit = {
-    env.jsRunner(Nil, new MemVirtualJSFile("no_script.js"))
-      .run(NullLogger, NullJSConsole)
+  private def setup(keepAlive: Boolean) = {
+    val driver = new MockWebDriver
+    val factory = new MockInjector(driver)
+    val config = SeleniumJSEnv.Config()
+      .withDriverFactory(factory)
+      .withKeepAlive(keepAlive)
+    val env = new SeleniumJSEnv(new DesiredCapabilities, config)
+
+    (driver, factory, env)
   }
 
-  private def runAsync(env: SeleniumJSEnv): Unit = {
-    val runner = env.asyncRunner(Nil, new MemVirtualJSFile("no_script.js"))
-    runner.start(NullLogger, NullJSConsole)
-    runner.await()
+  private def runNoCom(env: JSEnv) = {
+    val run = env.start(Input.ScriptsToLoad(Nil), RunConfig())
+    run.close()
+    Await.ready(run.future, 1.minute)
   }
 
-  private def runCom(env: SeleniumJSEnv): Unit = {
-    val runner = env.comRunner(Nil, new MemVirtualJSFile("no_script.js"))
-    runner.start(NullLogger, NullJSConsole)
-    runner.stop()
-    runner.await()
+  private def runWithCom(env: JSEnv) = {
+    val run = env.startWithCom(Input.ScriptsToLoad(Nil), RunConfig(), _ => ())
+    run.close()
+    Await.ready(run.future, 1.minute)
   }
 
   @Test
   def runClosesWithoutKeepAlive: Unit = {
-    val driver = new MockWebDriver()
-    runSync(newEnv(driver, keepAlive = false))
+    val (driver, factory, env) = setup(keepAlive = false)
+    runNoCom(env)
+    assertTrue(factory.used)
     assertTrue(driver.closed)
   }
 
   @Test
   def runNoCloseWithKeepAlive: Unit = {
-    val driver = new MockWebDriver()
-    runSync(newEnv(driver, keepAlive = true))
-    assertFalse(driver.closed)
-  }
-
-  @Test
-  def asyncRunClosesWithoutKeepAlive: Unit = {
-    val driver = new MockWebDriver()
-    runAsync(newEnv(driver, keepAlive = false))
-    assertTrue(driver.closed)
-  }
-
-  @Test
-  def asyncRunNoCloseWithKeepAlive: Unit = {
-    val driver = new MockWebDriver()
-    runAsync(newEnv(driver, keepAlive = true))
+    val (driver, factory, env) = setup(keepAlive = true)
+    runNoCom(env)
+    assertTrue(factory.used)
     assertFalse(driver.closed)
   }
 
   @Test
   def comRunClosesWithoutKeepAlive: Unit = {
-    val driver = new MockWebDriver()
-    runCom(newEnv(driver, keepAlive = false))
+    val (driver, factory, env) = setup(keepAlive = false)
+    runWithCom(env)
+    assertTrue(factory.used)
     assertTrue(driver.closed)
   }
 
   @Test
   def comRunNoCloseWithKeepAlive: Unit = {
-    val driver = new MockWebDriver()
-    runCom(newEnv(driver, keepAlive = true))
+    val (driver, factory, env) = setup(keepAlive = true)
+    runWithCom(env)
+    assertTrue(factory.used)
     assertFalse(driver.closed)
   }
 }

@@ -1,22 +1,15 @@
 package org.scalajs.jsenv.selenium
 
-import org.scalajs.core.tools.io.VirtualJSFile
-import org.scalajs.core.tools.jsdep.ResolvedJSDependency
-
 import org.openqa.selenium._
 import org.openqa.selenium.remote.DesiredCapabilities
 import org.openqa.selenium.remote.server._
 
 import org.scalajs.jsenv._
 
-import scala.reflect.{ClassTag, classTag}
-
 import java.net.URL
 import java.nio.file.{Path, Paths}
 
-class SeleniumJSEnv(capabilities: Capabilities, config: SeleniumJSEnv.Config)
-    extends AsyncJSEnv with ComJSEnv {
-
+final class SeleniumJSEnv(capabilities: Capabilities, config: SeleniumJSEnv.Config) extends JSEnv {
   def this(capabilities: Capabilities) =
     this(capabilities, SeleniumJSEnv.Config())
 
@@ -26,20 +19,13 @@ class SeleniumJSEnv(capabilities: Capabilities, config: SeleniumJSEnv.Config)
     x
   }
 
-  def name: String = s"SeleniumJSEnv ($capabilities)"
+  val name: String = s"SeleniumJSEnv ($capabilities)"
 
-  def jsRunner(libs: Seq[ResolvedJSDependency], code: VirtualJSFile): JSRunner =
-    new SeleniumRunner(newDriver _, libs, code, config)
+  def start(input: Input, runConfig: RunConfig): JSRun =
+    SeleniumRun.start(newDriver _, input, config, runConfig)
 
-  def asyncRunner(libs: Seq[ResolvedJSDependency],
-      code: VirtualJSFile): AsyncJSRunner = {
-    new SeleniumAsyncJSRunner(newDriver _, libs, code, config)
-  }
-
-  def comRunner(libs: Seq[ResolvedJSDependency],
-      code: VirtualJSFile): ComJSRunner = {
-    new SeleniumComJSRunner(newDriver _, libs, code, config)
-  }
+  def startWithCom(input: Input, runConfig: RunConfig, onMessage: String => Unit): JSComRun =
+    SeleniumRun.startWithCom(newDriver _, input, config, runConfig, onMessage)
 
   private def newDriver() = {
     val driver: WebDriver =
@@ -129,17 +115,6 @@ object SeleniumJSEnv {
 
     def withDriverFactory(driverFactory: DriverFactory): Config =
       copy(driverFactory = driverFactory)
-
-    @deprecated("Use materialization instead", "0.2.1")
-    lazy val materializer: FileMaterializer = newMaterializer
-
-    private[selenium] def newMaterializer: FileMaterializer = materialization match {
-      case Materialization.Temp =>
-        TempDirFileMaterializer
-
-      case Materialization.Server(contentDir, webRoot) =>
-        new ServerDirFileMaterializer(contentDir, webRoot)
-    }
 
     private def copy(keepAlive: Boolean = keepAlive,
         materialization: Config.Materialization = materialization,

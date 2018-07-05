@@ -66,7 +66,8 @@ val jsEnvCapabilities = settingKey[org.openqa.selenium.Capabilities](
 
 val testSettings: Seq[Setting[_]] = commonSettings ++ Seq(
   jsEnvCapabilities := TestCapabilities.fromEnv,
-  jsEnv := new SeleniumJSEnv(jsEnvCapabilities.value)
+  jsEnv := new SeleniumJSEnv(jsEnvCapabilities.value),
+  scalaJSUseMainModuleInitializer := true
 )
 
 // We'll need the name scalajs-env-selenium for the `seleniumJSEnv` project

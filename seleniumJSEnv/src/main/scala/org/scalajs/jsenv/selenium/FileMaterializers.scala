@@ -1,41 +1,80 @@
 package org.scalajs.jsenv.selenium
 
+import scala.collection.JavaConverters._
+
 import java.io._
 import java.nio.file._
 import java.net._
 
-import org.scalajs.core.tools.io._
-import org.scalajs.jsenv.VirtualFileMaterializer
+import org.scalajs.io._
 
-private[selenium] trait FileMaterializer {
-  def materialize(vf: VirtualTextFile): URL
+private[selenium] sealed abstract class FileMaterializer {
+  private val tmpSuffixRE = """[a-zA-Z0-9-_.]*$""".r
+
+  private[this] var tmpFiles: List[Path] = Nil
+
+  def materialize(vf: VirtualBinaryFile): URL = {
+    val tmp = newTmp(vf.path)
+    val in = vf.inputStream
+    Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING)
+    toURL(tmp)
+  }
+
+  final def materialize(name: String, content: String): URL = {
+    val tmp = newTmp(name)
+    Files.write(tmp, Iterable(content).asJava)
+    toURL(tmp)
+  }
+
+  final def close(): Unit = {
+    tmpFiles.foreach(Files.delete)
+    tmpFiles = Nil
+  }
+
+  private def newTmp(path: String): Path = {
+    val suffix = tmpSuffixRE.findFirstIn(path).orNull
+    val p = createTmp(suffix)
+    tmpFiles ::= p
+    p
+  }
+
+  protected def createTmp(suffix: String): Path
+  protected def toURL(file: Path): URL
 }
 
-/** Materializes virtual files in a temp directory (uses file:// schema). */
-private[selenium] object TempDirFileMaterializer extends FileMaterializer {
-  private val materializer = new VirtualFileMaterializer(singleDir = false)
+object FileMaterializer {
+  import SeleniumJSEnv.Config.Materialization
+  def apply(m: Materialization): FileMaterializer = m match {
+    case Materialization.Temp =>
+      new TempDirFileMaterializer
 
-  override def materialize(vf: VirtualTextFile): URL = {
-    materializer.materialize(vf).toURI.toURL
+    case Materialization.Server(contentDir, webRoot) =>
+      new ServerDirFileMaterializer(contentDir, webRoot)
   }
 }
 
-private[selenium] class ServerDirFileMaterializer(contentDir: Path,
-    webRoot: URL) extends FileMaterializer {
+/** materializes virtual files in a temp directory (uses file:// schema). */
+private class TempDirFileMaterializer extends FileMaterializer {
+  override def materialize(vf: VirtualBinaryFile): URL = vf match {
+    case vf: FileVirtualBinaryFile => vf.file.toURI.toURL
+    case vf                        => super.materialize(vf)
+  }
 
-  def this(contentDir: String, webRoot: String) =
-    this(Paths.get(contentDir), new URL(webRoot))
+  protected def createTmp(suffix: String) = Files.createTempFile(null, suffix)
+  protected def toURL(file: Path): URL = file.toUri.toURL
+}
 
-  require(webRoot.getPath().endsWith("/"), "webRoot must end with a slash (/)")
-
+private class ServerDirFileMaterializer(contentDir: Path, webRoot: URL)
+    extends FileMaterializer {
   Files.createDirectories(contentDir)
 
-  override def materialize(vf: VirtualTextFile): URL = {
-    val f = contentDir.resolve(vf.name).toFile
-    f.deleteOnExit()
-    IO.copyTo(vf, WritableFileVirtualTextFile(f))
+  protected def createTmp(suffix: String) =
+    Files.createTempFile(contentDir, null, suffix)
 
-    val nameURI = new URI(null, null, vf.name, null)
+  protected def toURL(file: Path): URL = {
+    val rel = contentDir.relativize(file)
+    assert(!rel.isAbsolute)
+    val nameURI = new URI(null, null, rel.toString, null)
     webRoot.toURI.resolve(nameURI).toURL
   }
 }

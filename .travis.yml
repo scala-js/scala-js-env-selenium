@@ -63,3 +63,11 @@ script:
     seleniumJSHttpEnvTest/test
     'set scalaJSStage in Global := FullOptStage'
     seleniumJSHttpEnvTest/test
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+    - $HOME/.coursier/cache
+before_cache:
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -delete
+  - find $HOME/.sbt -name "*.lock" -delete

@@ -23,7 +23,7 @@ For example for Firefox:
 
 ```scala
 jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(
-    org.openqa.selenium.remote.DesiredCapabilities.firefox())
+    new org.openqa.selenium.firefox.FirefoxOptions())
 ```
 
 You are responsible for installing the [drivers](

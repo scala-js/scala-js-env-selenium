@@ -1,6 +1,5 @@
 sudo: true
 language: scala
-dist: trusty  # Temporarily force dist
 scala:
   - 2.10.6
   - 2.11.11

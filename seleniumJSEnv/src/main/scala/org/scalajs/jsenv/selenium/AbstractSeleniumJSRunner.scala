@@ -60,9 +60,10 @@ private[selenium] abstract class AbstractSeleniumJSRunner(
     setupCapture() ++ runtimeEnv()
 
   protected def runAllScripts(): Unit = {
+    val materializer = config.newMaterializer
     val jsFiles = initFiles() ++ libs.map(_.lib) :+ code
-    val page = htmlPage(jsFiles.map(config.materializer.materialize _))
-    val pageURL = config.materializer.materialize(page)
+    val page = htmlPage(jsFiles.map(materializer.materialize _))
+    val pageURL = materializer.materialize(page)
 
     /* driver needs to be synchronized on.
      * endRun() might have been called while we were doing the work above.

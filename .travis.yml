@@ -1,6 +1,5 @@
 sudo: true
 language: scala
-dist: trusty  # Temporarily force dist
 scala:
   - 2.10.6
   - 2.11.11
@@ -20,7 +19,7 @@ before_install:
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
   # Install Selenium drivers
-  - wget http://chromedriver.storage.googleapis.com/2.30/chromedriver_linux64.zip
+  - wget http://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip
   - unzip chromedriver_linux64.zip -d bin
   - wget https://github.com/mozilla/geckodriver/releases/download/v0.18.0/geckodriver-v0.18.0-linux64.tar.gz
   - tar xf geckodriver-v0.18.0-linux64.tar.gz -C bin
@@ -63,3 +62,11 @@ script:
     seleniumJSHttpEnvTest/test
     'set scalaJSStage in Global := FullOptStage'
     seleniumJSHttpEnvTest/test
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+    - $HOME/.coursier/cache
+before_cache:
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -delete
+  - find $HOME/.sbt -name "*.lock" -delete

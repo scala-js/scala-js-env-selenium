@@ -11,6 +11,9 @@ import org.scalajs.jsenv._
 
 import scala.reflect.{ClassTag, classTag}
 
+import java.net.URL
+import java.nio.file.{Path, Paths}
+
 class SeleniumJSEnv(capabilities: Capabilities, config: SeleniumJSEnv.Config)
     extends AsyncJSEnv with ComJSEnv {
 
@@ -60,11 +63,13 @@ object SeleniumJSEnv {
   final class Config private (
       val driverFactory: DriverFactory,
       val keepAlive: Boolean,
-      val materializer: FileMaterializer
+      val materialization: Config.Materialization
   ) {
+    import Config.Materialization
+
     private def this() = this(
         keepAlive = false,
-        materializer = TempDirFileMaterializer,
+        materialization = Config.Materialization.Temp,
         driverFactory = Config.defaultFactory)
 
     /** Materializes purely virtual files into a temp directory.
@@ -74,7 +79,7 @@ object SeleniumJSEnv {
      *  good default choice. It is also the default of [[SeleniumJSEnv.Config]].
      */
     def withMaterializeInTemp: Config =
-      copy(materializer = TempDirFileMaterializer)
+      copy(materialization = Materialization.Temp)
 
     /** Materializes files in a static directory of a user configured server.
      *
@@ -102,7 +107,22 @@ object SeleniumJSEnv {
      *  }}}
      */
     def withMaterializeInServer(contentDir: String, webRoot: String): Config =
-      copy(materializer = new ServerDirFileMaterializer(contentDir, webRoot))
+      withMaterializeInServer(Paths.get(contentDir), new URL(webRoot))
+
+    /** Materializes files in a static directory of a user configured server.
+     *
+     *  Version of `withMaterializeInServer` with stronger typing.
+     *
+     *  @param contentDir Static content directory of the server. The files will
+     *      be put here. Will get created if it doesn't exist.
+     *  @param webRoot URL making `contentDir` accessible thorugh the server.
+     *      This must have a trailing slash to be interpreted as a directory.
+     */
+    def withMaterializeInServer(contentDir: Path, webRoot: URL): Config =
+      copy(materialization = Materialization.Server(contentDir, webRoot))
+
+    def withMaterialization(materialization: Materialization): Config =
+      copy(materialization = materialization)
 
     def withKeepAlive(keepAlive: Boolean): Config =
       copy(keepAlive = keepAlive)
@@ -110,10 +130,21 @@ object SeleniumJSEnv {
     def withDriverFactory(driverFactory: DriverFactory): Config =
       copy(driverFactory = driverFactory)
 
+    @deprecated("Use materialization instead", "0.2.1")
+    lazy val materializer: FileMaterializer = newMaterializer
+
+    private[selenium] def newMaterializer: FileMaterializer = materialization match {
+      case Materialization.Temp =>
+        TempDirFileMaterializer
+
+      case Materialization.Server(contentDir, webRoot) =>
+        new ServerDirFileMaterializer(contentDir, webRoot)
+    }
+
     private def copy(keepAlive: Boolean = keepAlive,
-        materializer: FileMaterializer = materializer,
+        materialization: Config.Materialization = materialization,
         driverFactory: DriverFactory = driverFactory) = {
-      new Config(driverFactory, keepAlive, materializer)
+      new Config(driverFactory, keepAlive, materialization)
     }
   }
 
@@ -139,5 +170,13 @@ object SeleniumJSEnv {
     }
 
     def apply(): Config = new Config()
+
+    abstract class Materialization private ()
+    object Materialization {
+      final case object Temp extends Materialization
+      final case class Server(contentDir: Path, webRoot: URL) extends Materialization {
+        require(webRoot.getPath().endsWith("/"), "webRoot must end with a slash (/)")
+      }
+    }
   }
 }

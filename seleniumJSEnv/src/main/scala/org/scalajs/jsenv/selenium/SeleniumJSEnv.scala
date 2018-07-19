@@ -70,7 +70,7 @@ object SeleniumJSEnv {
     private def this() = this(
         keepAlive = false,
         materialization = Config.Materialization.Temp,
-        driverFactory = Config.defaultFactory)
+        driverFactory = new DefaultDriverFactory(Platform.getCurrent()))
 
     /** Materializes purely virtual files into a temp directory.
      *
@@ -99,7 +99,7 @@ object SeleniumJSEnv {
      *  {{{
      *  jsSettings(
      *    jsEnv := new SeleniumJSEnv(
-     *        org.openqa.selenium.remote.DesiredCapabilities.firefox(),
+     *        new org.openqa.selenium.firefox.FirefoxOptions(),
      *        SeleniumJSEnv.Config()
      *          .withMaterializeInServer(".tmp", "http://localhost:8080/")
      *    )
@@ -149,26 +149,6 @@ object SeleniumJSEnv {
   }
 
   object Config {
-    private val defaultFactory = {
-      val factory = new DefaultDriverFactory()
-
-      def r(caps: Capabilities, clazz: Class[_ <: WebDriver]) =
-        factory.registerDriverProvider(new DefaultDriverProvider(caps, clazz))
-
-      import org.openqa.{selenium => s}
-
-      r(DesiredCapabilities.firefox(), classOf[s.firefox.FirefoxDriver])
-      r(DesiredCapabilities.chrome(), classOf[s.chrome.ChromeDriver])
-      r(DesiredCapabilities.internetExplorer(), classOf[s.ie.InternetExplorerDriver])
-      r(DesiredCapabilities.edge(), classOf[s.edge.EdgeDriver])
-      r(DesiredCapabilities.operaBlink(), classOf[s.opera.OperaDriver])
-      r(DesiredCapabilities.safari(), classOf[s.safari.SafariDriver])
-      r(DesiredCapabilities.phantomjs(), classOf[s.phantomjs.PhantomJSDriver])
-      r(DesiredCapabilities.htmlUnit(), classOf[s.htmlunit.HtmlUnitDriver])
-
-      factory
-    }
-
     def apply(): Config = new Config()
 
     abstract class Materialization private ()

@@ -50,7 +50,7 @@ script:
     seleniumJSHttpEnvTest/test
   - >
     sbt ++$TRAVIS_SCALA_VERSION
-    'set jsEnvCapabilities in seleniumJSEnvTest := org.openqa.selenium.remote.DesiredCapabilities.chrome()'
+    'set jsEnvCapabilities in seleniumJSEnvTest := new org.openqa.selenium.chrome.ChromeOptions()'
     seleniumJSEnvTest/run
     seleniumJSEnvTest/test
     'set scalaJSStage in Global := FullOptStage'
@@ -58,7 +58,7 @@ script:
     seleniumJSEnvTest/test
   - >
     sbt ++$TRAVIS_SCALA_VERSION
-    'set jsEnvCapabilities in seleniumJSHttpEnvTest := org.openqa.selenium.remote.DesiredCapabilities.chrome()'
+    'set jsEnvCapabilities in seleniumJSHttpEnvTest := new org.openqa.selenium.chrome.ChromeOptions()'
     seleniumJSHttpEnvTest/test
     'set scalaJSStage in Global := FullOptStage'
     seleniumJSHttpEnvTest/test

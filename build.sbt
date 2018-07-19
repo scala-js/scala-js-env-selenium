@@ -3,14 +3,13 @@ import sbt.Keys._
 import org.scalajs.sbtplugin.ScalaJSCrossVersion
 
 import org.openqa.selenium.Capabilities
-import org.openqa.selenium.remote.DesiredCapabilities
 
 import org.scalajs.jsenv.selenium.SeleniumJSEnv
 
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFilters}
 
-val previousVersion = Some("0.2.0")
+val previousVersion = None
 
 val scalaVersionsUsedForPublishing: Set[String] =
   Set("2.10.6", "2.11.11", "2.12.2")
@@ -18,7 +17,7 @@ val newScalaBinaryVersionsInThisRelease: Set[String] =
   Set()
 
 val commonSettings: Seq[Setting[_]] = Seq(
-  version := "0.2.1-SNAPSHOT",
+  version := "0.3.0-SNAPSHOT",
   organization := "org.scala-js",
   scalaVersion := "2.11.11",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),
@@ -65,7 +64,7 @@ val jsEnvCapabilities = settingKey[org.openqa.selenium.Capabilities](
     "Capabilities of the SeleniumJSEnv")
 
 val testSettings: Seq[Setting[_]] = commonSettings ++ Seq(
-  jsEnvCapabilities := DesiredCapabilities.firefox(),
+  jsEnvCapabilities := new org.openqa.selenium.firefox.FirefoxOptions(),
   jsEnv := new SeleniumJSEnv(jsEnvCapabilities.value),
   jsDependencies ++= Seq(
       RuntimeDOM % "test",
@@ -86,7 +85,7 @@ lazy val seleniumJSEnv: Project = project.
          * It pulls in "closure-compiler-java-6" which in turn bundles some old
          * guava stuff which in turn makes selenium fail.
          */
-        "org.seleniumhq.selenium" % "selenium-server" % "3.4.0",
+        "org.seleniumhq.selenium" % "selenium-server" % "3.13.0",
         "org.scala-js" %% "scalajs-js-envs" % scalaJSVersion,
         "org.scala-js" %% "scalajs-js-envs-test-kit" % scalaJSVersion % "test",
         "com.novocode" % "junit-interface" % "0.11" % "test"

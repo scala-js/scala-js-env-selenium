@@ -1,6 +1,5 @@
 package org.scalajs.jsenv.selenium
 
-import org.openqa.selenium.remote.DesiredCapabilities
 import org.scalajs.jsenv.test._
 import org.junit._
 
@@ -60,11 +59,13 @@ abstract class SeleniumJSEnvTest extends TimeoutComTests {
 }
 
 class SeleniumJSEnvChromeTest extends SeleniumJSEnvTest {
-  protected def newJSEnv: SeleniumJSEnv =
-    new SeleniumJSEnv(DesiredCapabilities.chrome())
+  import org.openqa.selenium.chrome.ChromeOptions
+
+  protected def newJSEnv: SeleniumJSEnv = new SeleniumJSEnv(new ChromeOptions())
 }
 
 class SeleniumJSEnvFirefoxTest extends SeleniumJSEnvTest {
-  protected def newJSEnv: SeleniumJSEnv =
-    new SeleniumJSEnv(DesiredCapabilities.firefox())
+  import org.openqa.selenium.firefox.FirefoxOptions
+
+  protected def newJSEnv: SeleniumJSEnv = new SeleniumJSEnv(new FirefoxOptions())
 }

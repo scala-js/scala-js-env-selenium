@@ -5,6 +5,7 @@ import org.scalajs.sbtplugin.ScalaJSCrossVersion
 import org.openqa.selenium.Capabilities
 
 import org.scalajs.jsenv.selenium.SeleniumJSEnv
+import org.scalajs.jsenv.selenium.TestCapabilities
 
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFilters}
@@ -64,7 +65,7 @@ val jsEnvCapabilities = settingKey[org.openqa.selenium.Capabilities](
     "Capabilities of the SeleniumJSEnv")
 
 val testSettings: Seq[Setting[_]] = commonSettings ++ Seq(
-  jsEnvCapabilities := new org.openqa.selenium.firefox.FirefoxOptions(),
+  jsEnvCapabilities := TestCapabilities.fromEnv,
   jsEnv := new SeleniumJSEnv(jsEnvCapabilities.value),
   jsDependencies ++= Seq(
       RuntimeDOM % "test",

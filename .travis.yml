@@ -7,7 +7,13 @@ scala:
 jdk:
   - oraclejdk7
   - oraclejdk8
+env:
+  - SJS_TEST_BROWSER=firefox
 matrix:
+  include:
+    - scala: 2.12.2
+      jdk: oraclejdk8
+      env: SJS_TEST_BROWSER=chrome
   exclude:
     - scala: 2.12.2
       jdk: oraclejdk7
@@ -15,9 +21,6 @@ addons:
   firefox: latest
   chrome: stable
 before_install:
-  # Initilize xvfb
-  - export DISPLAY=:99.0
-  - sh -e /etc/init.d/xvfb start
   # Install Selenium drivers
   - wget http://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip
   - unzip chromedriver_linux64.zip -d bin
@@ -45,20 +48,6 @@ script:
     seleniumJSEnvTest/test
   - >
     sbt ++$TRAVIS_SCALA_VERSION
-    seleniumJSHttpEnvTest/test
-    'set scalaJSStage in Global := FullOptStage'
-    seleniumJSHttpEnvTest/test
-  - >
-    sbt ++$TRAVIS_SCALA_VERSION
-    'set jsEnvCapabilities in seleniumJSEnvTest := new org.openqa.selenium.chrome.ChromeOptions()'
-    seleniumJSEnvTest/run
-    seleniumJSEnvTest/test
-    'set scalaJSStage in Global := FullOptStage'
-    seleniumJSEnvTest/run
-    seleniumJSEnvTest/test
-  - >
-    sbt ++$TRAVIS_SCALA_VERSION
-    'set jsEnvCapabilities in seleniumJSHttpEnvTest := new org.openqa.selenium.chrome.ChromeOptions()'
     seleniumJSHttpEnvTest/test
     'set scalaJSStage in Global := FullOptStage'
     seleniumJSHttpEnvTest/test

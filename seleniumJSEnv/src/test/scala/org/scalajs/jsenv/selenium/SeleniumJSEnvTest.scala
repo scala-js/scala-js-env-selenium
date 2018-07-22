@@ -3,8 +3,10 @@ package org.scalajs.jsenv.selenium
 import org.scalajs.jsenv.test._
 import org.junit._
 
-abstract class SeleniumJSEnvTest extends TimeoutComTests {
+class SeleniumJSEnvTest extends TimeoutComTests {
   // Additional tests. Should probably be included upstream.
+
+  protected def newJSEnv: SeleniumJSEnv = new SeleniumJSEnv(TestCapabilities.fromEnv)
 
   @Test // #74
   def closeAfterStartTest: Unit = {
@@ -56,16 +58,4 @@ abstract class SeleniumJSEnvTest extends TimeoutComTests {
   @Ignore("Not waiting for event loop to finish, issue #55.")
   @Test
   override def intervalTest: Unit = super.intervalTest
-}
-
-class SeleniumJSEnvChromeTest extends SeleniumJSEnvTest {
-  import org.openqa.selenium.chrome.ChromeOptions
-
-  protected def newJSEnv: SeleniumJSEnv = new SeleniumJSEnv(new ChromeOptions())
-}
-
-class SeleniumJSEnvFirefoxTest extends SeleniumJSEnvTest {
-  import org.openqa.selenium.firefox.FirefoxOptions
-
-  protected def newJSEnv: SeleniumJSEnv = new SeleniumJSEnv(new FirefoxOptions())
 }

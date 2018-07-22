@@ -15,3 +15,8 @@ unmanagedSourceDirectories in Compile ++= {
   val root = baseDirectory.value.getParentFile
   Seq(root / "seleniumJSEnv/src/main/scala")
 }
+
+sources in Compile += {
+  val root = baseDirectory.value.getParentFile
+  root / "seleniumJSEnv/src/test/scala/org/scalajs/jsenv/selenium/TestCapabilities.scala"
+}

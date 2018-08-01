@@ -6,7 +6,7 @@ import scala.scalajs.js.Dynamic._
 object CanvasCreator {
 
   def create(id: String): Unit = {
-    ElementCreator.create(s"<canvas id='$id'></canvas>")
+    ElementCreator.create("canvas", id = id)
   }
 
   def paint(id: String): Unit = {

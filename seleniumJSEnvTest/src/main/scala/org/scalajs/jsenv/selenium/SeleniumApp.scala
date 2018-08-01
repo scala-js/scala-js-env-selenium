@@ -8,13 +8,13 @@ object SeleniumApp extends js.JSApp {
   private val canvasId = "testCanvas"
 
   def main(): Unit = {
-    ElementCreator.create("<h1>SeleniumJSEnv Test</h1>")
+    ElementCreator.create("h1", text = "SeleniumJSEnv Test")
     CanvasCreator.create(canvasId)
     CanvasCreator.paint(canvasId)
 
     assertStructure()
 
-    ElementCreator.create("<h1>'run' finished.</h1>")
+    ElementCreator.create("h1", text = "'run' finished.")
     println("'run' finished.")
   }
 

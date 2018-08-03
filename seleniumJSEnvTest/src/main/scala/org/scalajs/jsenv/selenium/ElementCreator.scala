@@ -4,7 +4,18 @@ import scala.scalajs.js
 import scala.scalajs.js.Dynamic.global
 
 object ElementCreator {
-  val jQ = global.jQuery
+  def create(element: String, id: String = "", text: String = ""): js.Dynamic = {
+    val el = global.document.createElement(element)
 
-  def create(element: String): js.Dynamic = jQ("body").append(jQ(element))
+    if (id != "") {
+      el.id = id
+    }
+
+    if (text != "") {
+      el.textContent = text
+    }
+
+    global.document.body.appendChild(el)
+    el
+  }
 }

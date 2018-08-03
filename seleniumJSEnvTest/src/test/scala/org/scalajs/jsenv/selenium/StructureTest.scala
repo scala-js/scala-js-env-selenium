@@ -1,20 +1,23 @@
 package org.scalajs.jsenv.selenium
 
-import scalajs.js
-import scalajs.js.Dynamic._
-import scalajs.js.annotation.JSExport
+import org.junit.Assert._
+import org.junit.Test
 
-object SeleniumApp extends js.JSApp {
+import scala.scalajs.js
+import scala.scalajs.js.Dynamic.global
+
+class StructureTest {
   private val canvasId = "testCanvas"
 
-  def main(): Unit = {
-    ElementCreator.create("<h1>SeleniumJSEnv Test</h1>")
+  @Test
+  def testStructure(): Unit = {
+    ElementCreator.create("h1", text = "SeleniumJSEnv Test")
     CanvasCreator.create(canvasId)
     CanvasCreator.paint(canvasId)
 
     assertStructure()
 
-    ElementCreator.create("<h1>'run' finished.</h1>")
+    ElementCreator.create("h1", text = "'run' finished.")
     println("'run' finished.")
   }
 
@@ -29,10 +32,5 @@ object SeleniumApp extends js.JSApp {
     val canvas = elements(1)
     assertEquals("CANVAS", canvas.tagName.asInstanceOf[String])
     assertEquals(canvasId, canvas.id.asInstanceOf[String])
-  }
-
-  def assertEquals(expected: String, actual: String): Unit = {
-    if (expected != actual)
-      throw new Exception(s"Expected <$expected> but got <$actual>")
   }
 }

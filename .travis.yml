@@ -41,10 +41,8 @@ script:
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/test
   - >
     sbt ++$TRAVIS_SCALA_VERSION
-    seleniumJSEnvTest/run
     seleniumJSEnvTest/test
     'set scalaJSStage in Global := FullOptStage'
-    seleniumJSEnvTest/run
     seleniumJSEnvTest/test
   - >
     sbt ++$TRAVIS_SCALA_VERSION

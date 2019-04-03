@@ -5,7 +5,6 @@ scala:
   - 2.11.11
   - 2.12.2
 jdk:
-  - oraclejdk7
   - oraclejdk8
 env:
   - SJS_TEST_BROWSER=firefox
@@ -14,9 +13,6 @@ matrix:
     - scala: 2.12.2
       jdk: oraclejdk8
       env: SJS_TEST_BROWSER=chrome
-  exclude:
-    - scala: 2.12.2
-      jdk: oraclejdk7
 addons:
   firefox: latest
   chrome: stable
@@ -24,8 +20,8 @@ before_install:
   # Install Selenium drivers
   - wget http://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip
   - unzip chromedriver_linux64.zip -d bin
-  - wget https://github.com/mozilla/geckodriver/releases/download/v0.18.0/geckodriver-v0.18.0-linux64.tar.gz
-  - tar xf geckodriver-v0.18.0-linux64.tar.gz -C bin
+  - wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz
+  - tar xf geckodriver-v0.24.0-linux64.tar.gz -C bin
   - export PATH=$PWD/bin:$PATH
 before_script:
   - python -m SimpleHTTPServer 8080 &

@@ -82,7 +82,7 @@ lazy val seleniumJSEnv: Project = project.
          * It pulls in "closure-compiler-java-6" which in turn bundles some old
          * guava stuff which in turn makes selenium fail.
          */
-        "org.seleniumhq.selenium" % "selenium-server" % "3.13.0",
+        "org.seleniumhq.selenium" % "selenium-server" % "3.141.59",
         "org.scala-js" %% "scalajs-js-envs" % scalaJSVersion,
         "org.scala-js" %% "scalajs-js-envs-test-kit" % scalaJSVersion % "test",
         "com.novocode" % "junit-interface" % "0.11" % "test"

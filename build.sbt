@@ -18,7 +18,7 @@ val newScalaBinaryVersionsInThisRelease: Set[String] =
   Set()
 
 val commonSettings: Seq[Setting[_]] = Seq(
-  version := "1.0.0-SNAPSHOT",
+  version := "1.0.0-M7",
   organization := "org.scala-js",
   scalaVersion := "2.11.12",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),

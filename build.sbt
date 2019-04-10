@@ -13,14 +13,14 @@ import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFil
 val previousVersion = None
 
 val scalaVersionsUsedForPublishing: Set[String] =
-  Set("2.10.6", "2.11.11", "2.12.2")
+  Set("2.10.7", "2.11.12", "2.12.8")
 val newScalaBinaryVersionsInThisRelease: Set[String] =
   Set()
 
 val commonSettings: Seq[Setting[_]] = Seq(
   version := "1.0.0-SNAPSHOT",
   organization := "org.scala-js",
-  scalaVersion := "2.11.11",
+  scalaVersion := "2.11.12",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),
 
   homepage := Some(url("http://scala-js.org/")),

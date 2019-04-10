@@ -36,15 +36,19 @@ script:
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/mimaReportBinaryIssues
   - sbt ++$TRAVIS_SCALA_VERSION seleniumJSEnv/test
   - >
-    sbt ++$TRAVIS_SCALA_VERSION
-    seleniumJSEnvTest/test
-    'set scalaJSStage in Global := FullOptStage'
-    seleniumJSEnvTest/test
+    if [[ $TRAVIS_SCALA_VERSION != 2.10.* ]]; then
+      sbt ++$TRAVIS_SCALA_VERSION \
+      seleniumJSEnvTest/test \
+      'set scalaJSStage in Global := FullOptStage' \
+      seleniumJSEnvTest/test;
+    fi
   - >
-    sbt ++$TRAVIS_SCALA_VERSION
-    seleniumJSHttpEnvTest/test
-    'set scalaJSStage in Global := FullOptStage'
-    seleniumJSHttpEnvTest/test
+    if [[ $TRAVIS_SCALA_VERSION != 2.10.* ]]; then
+      sbt ++$TRAVIS_SCALA_VERSION \
+      seleniumJSHttpEnvTest/test \
+      'set scalaJSStage in Global := FullOptStage' \
+      seleniumJSHttpEnvTest/test;
+    fi
 cache:
   directories:
     - $HOME/.ivy2/cache

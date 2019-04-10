@@ -10,7 +10,7 @@ import org.scalajs.jsenv.selenium.TestCapabilities
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFilters}
 
-val previousVersion = Some("0.3.0")
+val previousVersion = None
 
 val scalaVersionsUsedForPublishing: Set[String] =
   Set("2.10.6", "2.11.11", "2.12.2")
@@ -18,7 +18,7 @@ val newScalaBinaryVersionsInThisRelease: Set[String] =
   Set()
 
 val commonSettings: Seq[Setting[_]] = Seq(
-  version := "0.3.1-SNAPSHOT",
+  version := "1.0.0-SNAPSHOT",
   organization := "org.scala-js",
   scalaVersion := "2.11.11",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),
@@ -66,7 +66,8 @@ val jsEnvCapabilities = settingKey[org.openqa.selenium.Capabilities](
 
 val testSettings: Seq[Setting[_]] = commonSettings ++ Seq(
   jsEnvCapabilities := TestCapabilities.fromEnv,
-  jsEnv := new SeleniumJSEnv(jsEnvCapabilities.value)
+  jsEnv := new SeleniumJSEnv(jsEnvCapabilities.value),
+  scalaJSUseMainModuleInitializer := true
 )
 
 // We'll need the name scalajs-env-selenium for the `seleniumJSEnv` project
@@ -82,7 +83,7 @@ lazy val seleniumJSEnv: Project = project.
          * It pulls in "closure-compiler-java-6" which in turn bundles some old
          * guava stuff which in turn makes selenium fail.
          */
-        "org.seleniumhq.selenium" % "selenium-server" % "3.13.0",
+        "org.seleniumhq.selenium" % "selenium-server" % "3.141.59",
         "org.scala-js" %% "scalajs-js-envs" % scalaJSVersion,
         "org.scala-js" %% "scalajs-js-envs-test-kit" % scalaJSVersion % "test",
         "com.novocode" % "junit-interface" % "0.11" % "test"

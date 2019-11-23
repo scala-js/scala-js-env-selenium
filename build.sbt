@@ -7,13 +7,8 @@ import org.openqa.selenium.Capabilities
 import org.scalajs.jsenv.selenium.SeleniumJSEnv
 import org.scalajs.jsenv.selenium.TestCapabilities
 
-import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-import com.typesafe.tools.mima.plugin.MimaKeys.{previousArtifact, binaryIssueFilters}
-
 val previousVersion = None
 
-val scalaVersionsUsedForPublishing: Set[String] =
-  Set("2.10.7", "2.11.12", "2.12.8")
 val newScalaBinaryVersionsInThisRelease: Set[String] =
   Set()
 
@@ -21,6 +16,7 @@ val commonSettings: Seq[Setting[_]] = Seq(
   version := "1.0.0-SNAPSHOT",
   organization := "org.scala-js",
   scalaVersion := "2.11.12",
+  crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.8"),
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),
 
   homepage := Some(url("http://scala-js.org/")),
@@ -31,18 +27,16 @@ val commonSettings: Seq[Setting[_]] = Seq(
       "scm:git:git@github.com:scala-js/scala-js-env-selenium.git",
       Some("scm:git:git@github.com:scala-js/scala-js-env-selenium.git"))),
   testOptions += Tests.Argument(TestFramework("com.novocode.junit.JUnitFramework"), "-v", "-a")
-) ++ mimaDefaultSettings
+)
 
-val previousArtifactSetting: Setting[_] = {
-  previousArtifact := {
+val previousArtifactSetting = Def.settings()
+  /* MiMa is completely disabled while we are in 1.0.0-SNAPSHOT.
+  mimaPreviousArtifacts ++= {
     val scalaV = scalaVersion.value
     val scalaBinaryV = scalaBinaryVersion.value
-    if (!scalaVersionsUsedForPublishing.contains(scalaV)) {
-      // This artifact will not be published. Binary compatibility is irrelevant.
-      None
-    } else if (newScalaBinaryVersionsInThisRelease.contains(scalaBinaryV)) {
+    if (newScalaBinaryVersionsInThisRelease.contains(scalaBinaryV)) {
       // New in this release, no binary compatibility to comply to
-      None
+      Set.empty
     } else {
       previousVersion.map { pv =>
         val thisProjectID = projectID.value
@@ -56,10 +50,10 @@ val previousArtifactSetting: Setting[_] = {
               .cross(thisProjectID.crossVersion)
               .extra(prevExtraAttributes.toSeq: _*)
         CrossVersion(scalaV, scalaBinaryV)(prevProjectID).cross(CrossVersion.Disabled)
-      }
+      }.toSet
     }
   }
-}
+  */
 
 val jsEnvCapabilities = settingKey[org.openqa.selenium.Capabilities](
     "Capabilities of the SeleniumJSEnv")
@@ -90,7 +84,7 @@ lazy val seleniumJSEnv: Project = project.
     ),
 
     previousArtifactSetting,
-    binaryIssueFilters ++= BinaryIncompatibilities.SeleniumJSEnv,
+    mimaBinaryIssueFilters ++= BinaryIncompatibilities.SeleniumJSEnv,
 
     publishMavenStyle := true,
     publishTo := {

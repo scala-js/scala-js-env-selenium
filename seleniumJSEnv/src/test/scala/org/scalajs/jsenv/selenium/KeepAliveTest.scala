@@ -77,13 +77,13 @@ class KeepAliveTest {
   }
 
   private def runNoCom(env: JSEnv) = {
-    val run = env.start(Input.ScriptsToLoad(Nil), RunConfig())
+    val run = env.start(Nil, RunConfig())
     run.close()
     Await.ready(run.future, 1.minute)
   }
 
   private def runWithCom(env: JSEnv) = {
-    val run = env.startWithCom(Input.ScriptsToLoad(Nil), RunConfig(), _ => ())
+    val run = env.startWithCom(Nil, RunConfig(), _ => ())
     run.close()
     Await.ready(run.future, 1.minute)
   }

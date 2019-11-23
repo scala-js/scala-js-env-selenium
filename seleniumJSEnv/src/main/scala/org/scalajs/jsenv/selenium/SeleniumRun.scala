@@ -2,7 +2,6 @@ package org.scalajs.jsenv.selenium
 
 import org.openqa.selenium._
 
-import org.scalajs.io._
 import org.scalajs.jsenv._
 
 import scala.annotation.tailrec
@@ -111,12 +110,13 @@ private[selenium] object SeleniumRun {
       .supportsOnOutputStream()
   }
 
-  def start(newDriver: () => JSDriver, input: Input, config: Config, runConfig: RunConfig): JSRun = {
+  def start(newDriver: () => JSDriver, input: Seq[Input], config: Config,
+      runConfig: RunConfig): JSRun = {
     startInternal(newDriver, input, config, runConfig, enableCom = false)(
         new SeleniumRun(_, _, _, _), JSRun.failed _)
   }
 
-  def startWithCom(newDriver: () => JSDriver, input: Input, config: Config,
+  def startWithCom(newDriver: () => JSDriver, input: Seq[Input], config: Config,
       runConfig: RunConfig, onMessage: String => Unit): JSComRun = {
     startInternal(newDriver, input, config, runConfig, enableCom = true)(
         new SeleniumComRun(_, _, _, _, onMessage), JSComRun.failed _)
@@ -124,20 +124,20 @@ private[selenium] object SeleniumRun {
 
   private type Ctor[T] = (JSDriver, Config, Streams, FileMaterializer) => T
 
-  private def startInternal[T](newDriver: () => JSDriver, input: Input,
+  private def startInternal[T](newDriver: () => JSDriver, input: Seq[Input],
       config: Config, runConfig: RunConfig, enableCom: Boolean)(
       newRun: Ctor[T], failed: Throwable => T): T = {
     validator.validate(runConfig)
 
-    val scripts = input match {
-      case Input.ScriptsToLoad(s) => s
-      case _                      => throw new UnsupportedInputException(input)
+    val scripts = input.map {
+      case Input.Script(s) => s
+      case _               => throw new UnsupportedInputException(input)
     }
 
     try {
       withCleanup(FileMaterializer(config.materialization))(_.close()) { m =>
         val allScriptURLs = (
-            m.materialize("setup.js", JSSetup.setupCode(enableCom)) ::
+            m.materialize("setup.js", JSSetup.setupCode(enableCom)) +:
             scripts.map(m.materialize)
         )
 

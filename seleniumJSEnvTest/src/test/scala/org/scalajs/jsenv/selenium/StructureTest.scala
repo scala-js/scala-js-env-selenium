@@ -3,7 +3,6 @@ package org.scalajs.jsenv.selenium
 import org.junit.Assert._
 import org.junit.Test
 
-import scala.scalajs.js
 import scala.scalajs.js.Dynamic.global
 
 class StructureTest {
@@ -22,14 +21,16 @@ class StructureTest {
   }
 
   def assertStructure(): Unit = {
-    val nodes = global.document.body.childNodes.asInstanceOf[js.Array[js.Dynamic]]
-    val elements = nodes.takeRight(2) // Ignore scripts
+    val nodes = global.document.body.childNodes
+    val len = nodes.length.asInstanceOf[Int]
 
-    val h1 = elements(0)
+    // Take last two nodes.
+
+    val h1 = nodes.item(len - 2)
     assertEquals("H1", h1.tagName.asInstanceOf[String])
     assertEquals("SeleniumJSEnv Test", h1.textContent.asInstanceOf[String])
 
-    val canvas = elements(1)
+    val canvas = nodes.item(len - 1)
     assertEquals("CANVAS", canvas.tagName.asInstanceOf[String])
     assertEquals(canvasId, canvas.id.asInstanceOf[String])
   }

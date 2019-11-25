@@ -1,10 +1,9 @@
 package org.scalajs.jsenv.selenium
 
-import scala.collection.JavaConverters._
-
 import java.io._
 import java.nio.file._
 import java.net._
+import java.util.Arrays
 
 import org.scalajs.io._
 
@@ -22,7 +21,7 @@ private[selenium] sealed abstract class FileMaterializer {
 
   final def materialize(name: String, content: String): URL = {
     val tmp = newTmp(name)
-    Files.write(tmp, Iterable(content).asJava)
+    Files.write(tmp, Arrays.asList(content))
     toURL(tmp)
   }
 

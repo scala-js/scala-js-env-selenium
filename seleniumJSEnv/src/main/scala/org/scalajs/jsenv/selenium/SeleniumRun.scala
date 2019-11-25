@@ -6,11 +6,11 @@ import org.scalajs.io._
 import org.scalajs.jsenv._
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
 import scala.concurrent._
 import scala.util.control.NonFatal
 
 import java.util.concurrent.{ConcurrentLinkedQueue, Executors}
+import java.util.function.Consumer
 
 private sealed class SeleniumRun(
     driver: WebDriver with JavascriptExecutor,
@@ -47,17 +47,22 @@ private sealed class SeleniumRun(
   def close(): Unit = wantClose = true
 
   private final def fetchAndProcess(): Unit = {
+    import SeleniumRun.consumer
+
     val data = driver
       .executeScript(s"return $intf.fetch();")
       .asInstanceOf[java.util.Map[String, java.util.List[String]]]
-      .asScala
 
-    data("consoleLog").asScala.foreach(streams.out.println _)
-    data("consoleError").asScala.foreach(streams.err.println _)
-    data("msgs").asScala.foreach(receivedMessage _)
+    data.get("consoleLog").forEach(consumer(streams.out.println _))
+    data.get("consoleError").forEach(consumer(streams.err.println _))
+    data.get("msgs").forEach(consumer(receivedMessage _))
 
-    val errs = data("errors").asScala
-    if (errs.nonEmpty) throw new SeleniumRun.WindowOnErrorException(errs.toList)
+    val errs = data.get("errors")
+    if (!errs.isEmpty()) {
+      // Convoluted way of writing errs.toList without JavaConverters.
+      val errList = errs.toArray(Array[String]()).toList
+      throw new SeleniumRun.WindowOnErrorException(errList)
+    }
   }
 
   private final def isInterfaceUp() =
@@ -179,4 +184,8 @@ private[selenium] object SeleniumRun {
   }
 
   private class WindowOnErrorException(errs: List[String]) extends Exception(s"JS error: $errs")
+
+  private def consumer[A](f: A => Unit): Consumer[A] = new Consumer[A] {
+    override def accept(v: A): Unit = f(v)
+  }
 }

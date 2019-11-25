@@ -3,8 +3,6 @@ package org.scalajs.jsenv.selenium
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-import scala.collection.JavaConverters._
-
 import java.net.URL
 
 import org.openqa.selenium._
@@ -24,7 +22,7 @@ class KeepAliveTest {
     def quit(): Unit = closed = true
 
     def executeScript(code: String, args: Object*): Object =
-      Map.empty[String, String].asJava
+      new java.util.HashMap[String, java.util.List[String]]()
 
     def get(url: String): Unit = ()
 

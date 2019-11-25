@@ -16,7 +16,7 @@ val commonSettings: Seq[Setting[_]] = Seq(
   version := "1.0.0-SNAPSHOT",
   organization := "org.scala-js",
   scalaVersion := "2.11.12",
-  crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.8"),
+  crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1"),
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings"),
 
   homepage := Some(url("http://scala-js.org/")),

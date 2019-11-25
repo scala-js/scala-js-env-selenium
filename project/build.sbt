@@ -1,8 +1,8 @@
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.0.0-M7")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.0.0-RC1")
 
-addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "0.1.8")
+addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "0.1.18")
 
-addSbtPlugin("org.scalastyle" % "scalastyle-sbt-plugin" % "0.8.0")
+addSbtPlugin("org.scalastyle" % "scalastyle-sbt-plugin" % "1.0.0")
 
 /* Make sure selenium is before scalajs-envs:
  * It pulls in "closure-compiler-java-6" which in turn bundles some old

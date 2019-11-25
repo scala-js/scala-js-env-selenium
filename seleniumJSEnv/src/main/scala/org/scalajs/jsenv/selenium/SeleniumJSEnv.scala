@@ -21,10 +21,10 @@ final class SeleniumJSEnv(capabilities: Capabilities, config: SeleniumJSEnv.Conf
 
   val name: String = s"SeleniumJSEnv ($capabilities)"
 
-  def start(input: Input, runConfig: RunConfig): JSRun =
+  def start(input: Seq[Input], runConfig: RunConfig): JSRun =
     SeleniumRun.start(newDriver _, input, config, runConfig)
 
-  def startWithCom(input: Input, runConfig: RunConfig, onMessage: String => Unit): JSComRun =
+  def startWithCom(input: Seq[Input], runConfig: RunConfig, onMessage: String => Unit): JSComRun =
     SeleniumRun.startWithCom(newDriver _, input, config, runConfig, onMessage)
 
   private def newDriver() = {

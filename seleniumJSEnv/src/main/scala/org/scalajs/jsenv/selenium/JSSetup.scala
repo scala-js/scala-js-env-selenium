@@ -1,7 +1,5 @@
 package org.scalajs.jsenv.selenium
 
-import org.scalajs.io._
-
 private[selenium] object JSSetup {
   def setupCode(enableCom: Boolean): String = {
     s"""

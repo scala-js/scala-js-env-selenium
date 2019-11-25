@@ -3,8 +3,6 @@ package org.scalajs.jsenv.selenium
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-import scala.collection.JavaConverters._
-
 import java.net.URL
 
 import org.openqa.selenium._
@@ -24,7 +22,7 @@ class KeepAliveTest {
     def quit(): Unit = closed = true
 
     def executeScript(code: String, args: Object*): Object =
-      Map.empty[String, String].asJava
+      new java.util.HashMap[String, java.util.List[String]]()
 
     def get(url: String): Unit = ()
 
@@ -79,13 +77,13 @@ class KeepAliveTest {
   }
 
   private def runNoCom(env: JSEnv) = {
-    val run = env.start(Input.ScriptsToLoad(Nil), RunConfig())
+    val run = env.start(Nil, RunConfig())
     run.close()
     Await.ready(run.future, 1.minute)
   }
 
   private def runWithCom(env: JSEnv) = {
-    val run = env.startWithCom(Input.ScriptsToLoad(Nil), RunConfig(), _ => ())
+    val run = env.startWithCom(Nil, RunConfig(), _ => ())
     run.close()
     Await.ready(run.future, 1.minute)
   }

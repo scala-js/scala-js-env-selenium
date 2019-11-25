@@ -2,15 +2,14 @@ package org.scalajs.jsenv.selenium
 
 import org.openqa.selenium._
 
-import org.scalajs.io._
 import org.scalajs.jsenv._
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
 import scala.concurrent._
 import scala.util.control.NonFatal
 
 import java.util.concurrent.{ConcurrentLinkedQueue, Executors}
+import java.util.function.Consumer
 
 private sealed class SeleniumRun(
     driver: WebDriver with JavascriptExecutor,
@@ -47,17 +46,22 @@ private sealed class SeleniumRun(
   def close(): Unit = wantClose = true
 
   private final def fetchAndProcess(): Unit = {
+    import SeleniumRun.consumer
+
     val data = driver
       .executeScript(s"return $intf.fetch();")
       .asInstanceOf[java.util.Map[String, java.util.List[String]]]
-      .asScala
 
-    data("consoleLog").asScala.foreach(streams.out.println _)
-    data("consoleError").asScala.foreach(streams.err.println _)
-    data("msgs").asScala.foreach(receivedMessage _)
+    data.get("consoleLog").forEach(consumer(streams.out.println _))
+    data.get("consoleError").forEach(consumer(streams.err.println _))
+    data.get("msgs").forEach(consumer(receivedMessage _))
 
-    val errs = data("errors").asScala
-    if (errs.nonEmpty) throw new SeleniumRun.WindowOnErrorException(errs.toList)
+    val errs = data.get("errors")
+    if (!errs.isEmpty()) {
+      // Convoluted way of writing errs.toList without JavaConverters.
+      val errList = errs.toArray(Array[String]()).toList
+      throw new SeleniumRun.WindowOnErrorException(errList)
+    }
   }
 
   private final def isInterfaceUp() =
@@ -106,12 +110,13 @@ private[selenium] object SeleniumRun {
       .supportsOnOutputStream()
   }
 
-  def start(newDriver: () => JSDriver, input: Input, config: Config, runConfig: RunConfig): JSRun = {
+  def start(newDriver: () => JSDriver, input: Seq[Input], config: Config,
+      runConfig: RunConfig): JSRun = {
     startInternal(newDriver, input, config, runConfig, enableCom = false)(
         new SeleniumRun(_, _, _, _), JSRun.failed _)
   }
 
-  def startWithCom(newDriver: () => JSDriver, input: Input, config: Config,
+  def startWithCom(newDriver: () => JSDriver, input: Seq[Input], config: Config,
       runConfig: RunConfig, onMessage: String => Unit): JSComRun = {
     startInternal(newDriver, input, config, runConfig, enableCom = true)(
         new SeleniumComRun(_, _, _, _, onMessage), JSComRun.failed _)
@@ -119,20 +124,20 @@ private[selenium] object SeleniumRun {
 
   private type Ctor[T] = (JSDriver, Config, Streams, FileMaterializer) => T
 
-  private def startInternal[T](newDriver: () => JSDriver, input: Input,
+  private def startInternal[T](newDriver: () => JSDriver, input: Seq[Input],
       config: Config, runConfig: RunConfig, enableCom: Boolean)(
       newRun: Ctor[T], failed: Throwable => T): T = {
     validator.validate(runConfig)
 
-    val scripts = input match {
-      case Input.ScriptsToLoad(s) => s
-      case _                      => throw new UnsupportedInputException(input)
+    val scripts = input.map {
+      case Input.Script(s) => s
+      case _               => throw new UnsupportedInputException(input)
     }
 
     try {
       withCleanup(FileMaterializer(config.materialization))(_.close()) { m =>
         val allScriptURLs = (
-            m.materialize("setup.js", JSSetup.setupCode(enableCom)) ::
+            m.materialize("setup.js", JSSetup.setupCode(enableCom)) +:
             scripts.map(m.materialize)
         )
 
@@ -179,4 +184,8 @@ private[selenium] object SeleniumRun {
   }
 
   private class WindowOnErrorException(errs: List[String]) extends Exception(s"JS error: $errs")
+
+  private def consumer[A](f: A => Unit): Consumer[A] = new Consumer[A] {
+    override def accept(v: A): Unit = f(v)
+  }
 }

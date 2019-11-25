@@ -1,28 +1,24 @@
 package org.scalajs.jsenv.selenium
 
-import scala.collection.JavaConverters._
-
 import java.io._
 import java.nio.file._
 import java.net._
-
-import org.scalajs.io._
+import java.util.Arrays
 
 private[selenium] sealed abstract class FileMaterializer {
   private val tmpSuffixRE = """[a-zA-Z0-9-_.]*$""".r
 
   private[this] var tmpFiles: List[Path] = Nil
 
-  def materialize(vf: VirtualBinaryFile): URL = {
-    val tmp = newTmp(vf.path)
-    val in = vf.inputStream
-    Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING)
+  def materialize(path: Path): URL = {
+    val tmp = newTmp(path.toString)
+    Files.copy(path, tmp, StandardCopyOption.REPLACE_EXISTING)
     toURL(tmp)
   }
 
   final def materialize(name: String, content: String): URL = {
     val tmp = newTmp(name)
-    Files.write(tmp, Iterable(content).asJava)
+    Files.write(tmp, Arrays.asList(content))
     toURL(tmp)
   }
 
@@ -55,9 +51,13 @@ object FileMaterializer {
 
 /** materializes virtual files in a temp directory (uses file:// schema). */
 private class TempDirFileMaterializer extends FileMaterializer {
-  override def materialize(vf: VirtualBinaryFile): URL = vf match {
-    case vf: FileVirtualBinaryFile => vf.file.toURI.toURL
-    case vf                        => super.materialize(vf)
+  override def materialize(path: Path): URL = {
+    try {
+      path.toFile.toURI.toURL
+    } catch {
+      case _: UnsupportedOperationException =>
+        super.materialize(path)
+    }
   }
 
   protected def createTmp(suffix: String) = Files.createTempFile(null, suffix)

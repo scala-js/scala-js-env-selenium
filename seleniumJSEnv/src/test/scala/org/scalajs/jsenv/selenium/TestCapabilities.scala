@@ -10,7 +10,7 @@ object TestCapabilities {
   // Lower the logging level for Selenium to avoid spam.
   Logger.getLogger("org.openqa.selenium").setLevel(Level.WARNING)
 
-  def fromEnv: Capabilities = sys.env.getOrElse("SJS_TEST_BROWSER", "firefox") match {
+  def fromEnv: Capabilities = nameFromEnv match {
     case "firefox" =>
       new FirefoxOptions()
         .setHeadless(true)
@@ -23,4 +23,6 @@ object TestCapabilities {
     case name =>
       throw new IllegalArgumentException(s"Unknown browser $name")
   }
+
+  def nameFromEnv: String = sys.env.getOrElse("SJS_TEST_BROWSER", "firefox")
 }

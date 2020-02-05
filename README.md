@@ -8,8 +8,8 @@ Simply add the following line to your `project/plugins.sbt` (note that this line
 // For Scala.js 0.6.x
 libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "0.3.0"
 
-// For Scala.js 1.0.0-RC2
-libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "1.0.0-RC2"
+// For Scala.js 1.x
+libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "1.0.0"
 ```
 and the following line to your sbt settings:
 ```scala

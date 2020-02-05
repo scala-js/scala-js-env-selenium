@@ -1,4 +1,4 @@
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.0.0-RC2")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.0.0")
 
 addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "0.1.18")
 

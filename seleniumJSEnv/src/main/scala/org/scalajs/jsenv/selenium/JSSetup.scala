@@ -1,7 +1,18 @@
 package org.scalajs.jsenv.selenium
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path}
+
+import com.google.common.jimfs.Jimfs
+
 private[selenium] object JSSetup {
-  def setupCode(enableCom: Boolean): String = {
+  def setupFile(enableCom: Boolean): Path = {
+    val path = Jimfs.newFileSystem().getPath("setup.js")
+    val contents = setupCode(enableCom).getBytes(StandardCharsets.UTF_8)
+    Files.write(path, contents)
+  }
+
+  private def setupCode(enableCom: Boolean): String = {
     s"""
      |(function() {
      |  // Buffers for console.log / console.error
@@ -77,4 +88,5 @@ private[selenium] object JSSetup {
      |}).call(this)
     """.stripMargin
   }
+
 }

@@ -10,6 +10,8 @@ import scala.util.control.NonFatal
 
 import java.util.concurrent.{ConcurrentLinkedQueue, Executors}
 import java.util.function.Consumer
+import java.nio.file.Path
+import java.net.URL
 
 private sealed class SeleniumRun(
     driver: WebDriver with JavascriptExecutor,
@@ -129,20 +131,11 @@ private[selenium] object SeleniumRun {
       newRun: Ctor[T], failed: Throwable => T): T = {
     validator.validate(runConfig)
 
-    val scripts = input.map {
-      case Input.Script(s) => s
-      case _               => throw new UnsupportedInputException(input)
-    }
-
     try {
       withCleanup(FileMaterializer(config.materialization))(_.close()) { m =>
-        val allScriptURLs = (
-            m.materialize("setup.js", JSSetup.setupCode(enableCom)) +:
-            scripts.map(m.materialize)
-        )
-
-        val page = m.materialize("scalajsRun.html", htmlPage(allScriptURLs))
-
+        val setupJsScript = Input.Script(JSSetup.setupFile(enableCom))
+        val fullInput = setupJsScript +: input
+        val page = m.materialize("scalajsRun.html", htmlPage(fullInput, m))
         withCleanup(newDriver())(maybeCleanupDriver(_, config)) { driver =>
           driver.navigate().to(page)
 
@@ -171,16 +164,25 @@ private[selenium] object SeleniumRun {
   private def maybeCleanupDriver(d: WebDriver, config: SeleniumJSEnv.Config) =
     if (!config.keepAlive) d.close()
 
-  private def htmlPage(scripts: Seq[java.net.URL]): String = {
-    val scriptTags =
-      scripts.map(path => s"<script src='${path.toString}'></script>")
+  private def htmlPage(fullInput: Seq[Input], materializer: FileMaterializer): String = {
+    val tags = fullInput.map {
+      case Input.Script(path)   => makeTag(path, "text/javascript", materializer)
+      case Input.ESModule(path) => makeTag(path, "module", materializer)
+      case _                    => throw new UnsupportedInputException(fullInput)
+    }
+
     s"""<html>
        |  <meta charset="UTF-8">
        |  <body>
-       |    ${scriptTags.mkString("\n    ")}
+       |    ${tags.mkString("\n    ")}
        |  </body>
        |</html>
     """.stripMargin
+  }
+
+  private def makeTag(path: Path, tpe: String, materializer: FileMaterializer): String = {
+    val url = materializer.materialize(path)
+    s"<script defer type='$tpe' src='$url'></script>"
   }
 
   private class WindowOnErrorException(errs: List[String]) extends Exception(s"JS error: $errs")

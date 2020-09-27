@@ -78,8 +78,8 @@ lazy val seleniumJSEnv: Project = project.
          * guava stuff which in turn makes selenium fail.
          */
         "org.seleniumhq.selenium" % "selenium-server" % "3.141.59",
-        "org.scala-js" %% "scalajs-js-envs" % scalaJSVersion,
-        "org.scala-js" %% "scalajs-js-envs-test-kit" % scalaJSVersion % "test",
+        "org.scala-js" %% "scalajs-js-envs" % "1.1.1",
+        "org.scala-js" %% "scalajs-js-envs-test-kit" % "1.1.1" % "test",
         "com.novocode" % "junit-interface" % "0.11" % "test"
     ),
 

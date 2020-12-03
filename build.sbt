@@ -7,7 +7,7 @@ import org.openqa.selenium.Capabilities
 import org.scalajs.jsenv.selenium.SeleniumJSEnv
 import org.scalajs.jsenv.selenium.TestCapabilities
 
-val previousVersion = None
+val previousVersion: Option[String] = Some("1.1.0")
 
 val newScalaBinaryVersionsInThisRelease: Set[String] =
   Set()
@@ -29,31 +29,31 @@ val commonSettings: Seq[Setting[_]] = Seq(
   testOptions += Tests.Argument(TestFramework("com.novocode.junit.JUnitFramework"), "-v", "-a")
 )
 
-val previousArtifactSetting = Def.settings()
-  /* MiMa is completely disabled while we are in 1.0.0-SNAPSHOT.
+val previousArtifactSetting = Def.settings(
   mimaPreviousArtifacts ++= {
     val scalaV = scalaVersion.value
     val scalaBinaryV = scalaBinaryVersion.value
-    if (newScalaBinaryVersionsInThisRelease.contains(scalaBinaryV)) {
-      // New in this release, no binary compatibility to comply to
-      Set.empty
-    } else {
-      previousVersion.map { pv =>
-        val thisProjectID = projectID.value
+    val thisProjectID = projectID.value
+    previousVersion match {
+      case None =>
+        Set.empty
+      case _ if newScalaBinaryVersionsInThisRelease.contains(scalaBinaryV) =>
+        // New in this release, no binary compatibility to comply to
+        Set.empty
+      case Some(prevVersion) =>
         /* Filter out e:info.apiURL as it expects 0.6.7-SNAPSHOT, whereas the
          * artifact we're looking for has 0.6.6 (for example).
          */
         val prevExtraAttributes =
           thisProjectID.extraAttributes.filterKeys(_ != "e:info.apiURL")
         val prevProjectID =
-          (thisProjectID.organization % thisProjectID.name % pv)
-              .cross(thisProjectID.crossVersion)
-              .extra(prevExtraAttributes.toSeq: _*)
-        CrossVersion(scalaV, scalaBinaryV)(prevProjectID).cross(CrossVersion.Disabled)
-      }.toSet
+          (thisProjectID.organization % thisProjectID.name % prevVersion)
+            .cross(thisProjectID.crossVersion)
+            .extra(prevExtraAttributes.toSeq: _*)
+        Set(prevProjectID)
     }
   }
-  */
+)
 
 val jsEnvCapabilities = settingKey[org.openqa.selenium.Capabilities](
     "Capabilities of the SeleniumJSEnv")

@@ -1,0 +1,60 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        scalaversion: ["2.11.12", "2.12.10", "2.13.1"]
+        browser: ["chrome"]
+        include:
+          - scalaversion: "2.12.10"
+            browser: "firefox"
+    env:
+      SJS_TEST_BROWSER: ${{ matrix.browser }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "adopt@1.8"
+      - uses: coursier/cache-action@v5
+      - name: Install Selenium drivers
+        run: |
+          wget http://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip
+          unzip chromedriver_linux64.zip -d bin
+          wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz
+          tar xf geckodriver-v0.24.0-linux64.tar.gz -C bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+      - name: Scalastyle
+        run: >
+          sbt "++${{ matrix.scalaversion }}"
+          seleniumJSEnv/scalastyle
+          seleniumJSEnv/test:scalastyle
+          seleniumJSEnvTest/scalastyle
+          seleniumJSHttpEnvTest/test:scalastyle
+          seleniumJSEnvTest/test:scalastyle
+      - name: MiMa
+        run: sbt "++${{ matrix.scalaversion }}" seleniumJSEnv/mimaReportBinaryIssues
+      - name: Unit tests
+        run: sbt "++${{ matrix.scalaversion }}" seleniumJSEnv/test
+      - name: Integration tests
+        run: >
+          sbt "++${{ matrix.scalaversion }}"
+          seleniumJSEnvTest/test
+          'set scalaJSStage in Global := FullOptStage'
+          seleniumJSEnvTest/test
+      - name: Start HTTP server
+        run: "python3 -m http.server 8080 &"
+      - name: Integration tests with HTTP server
+        run: >
+          sbt "++${{ matrix.scalaversion }}"
+          seleniumJSHttpEnvTest/test
+          'set scalaJSStage in Global := FullOptStage'
+          seleniumJSHttpEnvTest/test

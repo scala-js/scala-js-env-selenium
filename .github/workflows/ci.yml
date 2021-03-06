@@ -25,13 +25,6 @@ jobs:
         with:
           java-version: "adopt@1.8"
       - uses: coursier/cache-action@v5
-      - name: Install Selenium drivers
-        run: |
-          wget http://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip
-          unzip chromedriver_linux64.zip -d bin
-          wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz
-          tar xf geckodriver-v0.24.0-linux64.tar.gz -C bin
-          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
       - name: Scalastyle
         run: >
           sbt "++${{ matrix.scalaversion }}"

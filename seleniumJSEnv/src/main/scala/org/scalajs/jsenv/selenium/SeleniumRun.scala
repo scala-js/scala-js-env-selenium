@@ -162,7 +162,7 @@ private[selenium] object SeleniumRun {
   }
 
   private def maybeCleanupDriver(d: WebDriver, config: SeleniumJSEnv.Config) =
-    if (!config.keepAlive) d.close()
+    if (!config.keepAlive) d.quit()
 
   private def htmlPage(fullInput: Seq[Input], materializer: FileMaterializer): String = {
     val tags = fullInput.map {

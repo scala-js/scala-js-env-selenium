@@ -18,7 +18,6 @@ class KeepAliveTest {
   private final class MockWebDriver extends WebDriver with JavascriptExecutor {
     var closed = false
 
-    def close(): Unit = closed = true
     def quit(): Unit = closed = true
 
     def executeScript(code: String, args: Object*): Object =
@@ -35,6 +34,8 @@ class KeepAliveTest {
     }
 
     // Stuff we won't need.
+
+    def close(): Unit = ???
 
     def executeAsyncScript(code: String, args: Object*): Object = ???
 

@@ -7,13 +7,13 @@ import org.openqa.selenium.Capabilities
 import org.scalajs.jsenv.selenium.SeleniumJSEnv
 import org.scalajs.jsenv.selenium.TestCapabilities
 
-val previousVersion: Option[String] = Some("1.1.0")
+val previousVersion: Option[String] = Some("1.1.1")
 
 val newScalaBinaryVersionsInThisRelease: Set[String] =
   Set()
 
 val commonSettings: Seq[Setting[_]] = Seq(
-  version := "1.1.1",
+  version := "1.1.2-SNAPSHOT",
   organization := "org.scala-js",
   scalaVersion := "2.11.12",
   crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1"),
